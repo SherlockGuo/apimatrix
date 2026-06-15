@@ -21,7 +21,6 @@ import { Link } from '@tanstack/react-router'
 import {
   BookOpen,
   CheckCircle2,
-  CircleDashed,
   KeyRound,
   ListChecks,
   Terminal,
@@ -75,9 +74,7 @@ const navSections: NavSection[] = [
       { href: '#openai-text', label: 'OpenAI 兼容文本' },
       { href: '#claude', label: 'Claude · Anthropic' },
       { href: '#gemini', label: 'Gemini · 原生协议' },
-      { href: '#images', label: '图片生成' },
-      { href: '#videos', label: '视频生成' },
-      { href: '#tts', label: '语音合成 TTS' },
+      { href: '#newapi-text', label: 'NewAPI 兼容文本' },
     ],
   },
   {
@@ -132,30 +129,6 @@ const modelGroups: ModelGroup[] = [
       (item) => item.vendor === 'Google'
     ).map((item) => item.model),
   },
-  {
-    protocol: 'Video',
-    title: 'Happyhorse 视频任务（待接入）',
-    models: [
-      'happyhorse-1.0-t2v',
-      'happyhorse-1.0-i2v',
-      'happyhorse-1.0-r2v',
-      'happyhorse-1.0-video-edit',
-    ],
-  },
-  {
-    protocol: 'Video',
-    title: 'Seedance 视频任务',
-    models: ['doubao-seedance-2-0-260128', 'doubao-seedance-2-0-fast-260128'],
-  },
-  {
-    protocol: 'Audio Speech',
-    title: '语音合成',
-    models: [
-      'qwen3-tts-flash',
-      'MiniMax/speech-2.8-turbo',
-      'MiniMax/speech-2.8-hd',
-    ],
-  },
 ]
 
 const summaryRows: SummaryRow[] = [
@@ -167,39 +140,21 @@ const summaryRows: SummaryRow[] = [
   },
   {
     type: 'Claude 原生消息',
-    endpoint: 'POST /v1/messages',
+    endpoint: 'POST /anthropic/messages',
     auth: 'x-api-key: <YOUR_API_KEY>',
     status: '可选',
   },
   {
     type: 'Gemini 原生内容生成',
-    endpoint: 'POST /v1beta/models/{model}:generateContent',
-    auth: 'x-goog-api-key: <YOUR_API_KEY>',
+    endpoint: 'POST /gemini/v1/models/{model}:generateContent',
+    auth: 'Authorization: Bearer <YOUR_API_KEY>',
     status: '可选',
   },
   {
-    type: '图片生成 / 编辑',
-    endpoint: 'POST /v1/images/generations',
+    type: 'NewAPI 兼容文本',
+    endpoint: 'POST /newapi/v1/chat/completions',
     auth: 'Authorization: Bearer <YOUR_API_KEY>',
-    status: '暂未开放',
-  },
-  {
-    type: '视频生成',
-    endpoint: 'POST /v1/video/generations；/v1/videos 待接入',
-    auth: 'Authorization: Bearer <YOUR_API_KEY>',
-    status: '任务接口',
-  },
-  {
-    type: 'Seedance 素材审核',
-    endpoint: '目标站素材审核接口',
-    auth: 'Authorization: Bearer <YOUR_API_KEY>',
-    status: '待接入',
-  },
-  {
-    type: '语音合成 TTS',
-    endpoint: 'POST /v1/audio/speech',
-    auth: 'Authorization: Bearer <YOUR_API_KEY>',
-    status: '文件流',
+    status: '可选',
   },
 ]
 
@@ -318,7 +273,7 @@ response = client.chat.completions.create(
     max_tokens=512,
 )
 print(response.choices[0].message.content)`,
-      claude: `curl "${baseUrl}/v1/messages" \\
+      claude: `curl "${baseUrl}/anthropic/messages" \\
   -H "x-api-key: <YOUR_API_KEY>" \\
   -H "anthropic-version: 2023-06-01" \\
   -H "content-type: application/json" \\
@@ -329,8 +284,8 @@ print(response.choices[0].message.content)`,
       {"role": "user", "content": "请用一句话介绍你自己"}
     ]
   }'`,
-      gemini: `curl "${baseUrl}/v1beta/models/gemini-3-pro-preview:generateContent" \\
-  -H "x-goog-api-key: <YOUR_API_KEY>" \\
+      gemini: `curl "${baseUrl}/gemini/v1/models/gemini-3-pro-preview:generateContent" \\
+  -H "Authorization: Bearer <YOUR_API_KEY>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "contents": [
@@ -340,6 +295,16 @@ print(response.choices[0].message.content)`,
         ]
       }
     ]
+  }'`,
+      newapi: `curl "${baseUrl}/newapi/v1/chat/completions" \\
+  -H "Authorization: Bearer <YOUR_API_KEY>" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "DeepSeek-V3.2",
+    "messages": [
+      {"role": "user", "content": "请用一句话介绍你自己"}
+    ],
+    "temperature": 0.7
   }'`,
       thinking: `{
   "model": "claude-sonnet-4-6",
@@ -355,75 +320,6 @@ print(response.choices[0].message.content)`,
     }
   ]
 }`,
-      seedanceText: `curl "${baseUrl}/v1/video/generations" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "doubao-seedance-2-0-260128",
-    "prompt": "一个中国男孩在挥舞一把宝剑 --dur 4 --rs 720p --rt 16:9 --wm false",
-    "seconds": "4",
-    "metadata": {
-      "resolution": "720p",
-      "ratio": "16:9",
-      "generate_audio": false,
-      "watermark": false
-    }
-  }'`,
-      seedanceFrames: `curl "${baseUrl}/v1/video/generations" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "doubao-seedance-2-0-260128",
-    "prompt": "以图片1作为首帧、图片2作为尾帧，生成一段自然流畅的产品转场视频",
-    "seconds": "4",
-    "metadata": {
-      "content": [
-        {
-          "type": "image_url",
-          "image_url": {"url": "https://example.com/first-frame.jpg"},
-          "role": "first_frame"
-        },
-        {
-          "type": "image_url",
-          "image_url": {"url": "https://example.com/last-frame.jpg"},
-          "role": "last_frame"
-        }
-      ],
-      "resolution": "720p",
-      "ratio": "adaptive",
-      "watermark": false
-    }
-  }'`,
-      seedancePoll: `curl "${baseUrl}/v1/video/generations/<task_id>" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>"`,
-      tts: `curl "${baseUrl}/v1/audio/speech" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "qwen3-tts-flash",
-    "input": "你好，这是一个测试。",
-    "voice": "Cherry"
-  }' \\
-  --output speech.wav`,
-      ttsPython: `import requests
-
-resp = requests.post(
-    "${baseUrl}/v1/audio/speech",
-    headers={
-        "Authorization": "Bearer <YOUR_API_KEY>",
-        "Content-Type": "application/json",
-    },
-    json={
-        "model": "qwen3-tts-flash",
-        "input": "你好，这是一个测试。",
-        "voice": "Cherry",
-    },
-    timeout=180,
-)
-
-resp.raise_for_status()
-with open("speech.wav", "wb") as f:
-    f.write(resp.content)`,
     }),
     [baseUrl]
   )
@@ -509,10 +405,7 @@ with open("speech.wav", "wb") as f:
             <DocsSection id='basic' title='基本信息'>
               <div className='grid gap-3 md:grid-cols-3'>
                 <InfoTile label='Base URL' value={baseUrl} />
-                <InfoTile
-                  label='鉴权方式'
-                  value='Bearer Key / x-api-key / x-goog-api-key'
-                />
+                <InfoTile label='鉴权方式' value='Bearer Key / x-api-key' />
                 <InfoTile label='模型列表接口' value='GET /v1/models' />
               </div>
               <ul className='text-muted-foreground list-disc space-y-2 pl-5 text-sm leading-6'>
@@ -574,8 +467,8 @@ with open("speech.wav", "wb") as f:
 
             <DocsSection id='claude' eyebrow='Anthropic' title='Claude 文本'>
               <p className='text-muted-foreground text-sm leading-6'>
-                接口：<InlineCode>POST /v1/messages</InlineCode>。 鉴权头为{' '}
-                <InlineCode>x-api-key</InlineCode>，需带{' '}
+                接口：<InlineCode>POST /anthropic/messages</InlineCode>。
+                鉴权头为 <InlineCode>x-api-key</InlineCode>，需带{' '}
                 <InlineCode>anthropic-version</InlineCode>。
               </p>
               <CodeSnippet code={snippets.claude} />
@@ -589,116 +482,25 @@ with open("speech.wav", "wb") as f:
               <p className='text-muted-foreground text-sm leading-6'>
                 接口：
                 <InlineCode>
-                  POST /v1beta/models/{'{model}'}:generateContent
+                  POST /gemini/v1/models/{'{model}'}:generateContent
                 </InlineCode>
-                。 鉴权头为 <InlineCode>x-goog-api-key</InlineCode>。
+                。 鉴权头使用 <InlineCode>Authorization: Bearer</InlineCode>。
               </p>
               <CodeSnippet code={snippets.gemini} />
             </DocsSection>
 
-            <DocsSection id='images' title='图片生成 / 编辑'>
-              <Alert className='border-amber-200 bg-amber-50/80 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100'>
-                <CircleDashed aria-hidden='true' />
-                <AlertTitle>当前先不开放图片模型</AlertTitle>
-                <AlertDescription>
-                  目标站文档包含图片生成与编辑接口。本项目当前按需求先不处理图片模型，
-                  后续开放后可使用{' '}
-                  <InlineCode>/v1/images/generations</InlineCode>。
-                </AlertDescription>
-              </Alert>
-            </DocsSection>
-
-            <DocsSection id='videos' title='视频生成'>
-              <Alert className='border-sky-200 bg-sky-50/80 text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100'>
-                <CheckCircle2 aria-hidden='true' />
-                <AlertTitle>异步任务接口</AlertTitle>
-                <AlertDescription>
-                  视频生成提交后会返回任务 ID，需要通过查询接口轮询状态。
-                  素材图片、视频和音频都应使用公网可访问的文件直链。
-                </AlertDescription>
-              </Alert>
-
-              <div className='space-y-5'>
-                <div className='space-y-3'>
-                  <h3 className='text-lg font-semibold tracking-normal'>
-                    Happyhorse 系列 · <InlineCode>/v1/videos</InlineCode>
-                  </h3>
-                  <Alert className='border-amber-200 bg-amber-50/80 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100'>
-                    <CircleDashed aria-hidden='true' />
-                    <AlertTitle>当前待接入</AlertTitle>
-                    <AlertDescription>
-                      目标文档包含 Happyhorse
-                      文生视频、图生视频、参考图生视频和视频编辑示例；
-                      当前后端还没有对应通道和模型映射，暂不对客户开放。
-                    </AlertDescription>
-                  </Alert>
-                </div>
-
-                <div className='space-y-3'>
-                  <h3 className='text-lg font-semibold tracking-normal'>
-                    Seedance 2.0 ·{' '}
-                    <InlineCode>/v1/video/generations</InlineCode>
-                  </h3>
-                  <p className='text-muted-foreground text-sm leading-6'>
-                    Seedance 使用独立端点。普通文生视频保留顶层{' '}
-                    <InlineCode>prompt</InlineCode>
-                    ；分辨率、比例、水印、首尾帧、
-                    参考图片、参考视频或参考音频等上游参数放入{' '}
-                    <InlineCode>metadata</InlineCode>。
-                  </p>
-                  <div className='grid gap-4 xl:grid-cols-2'>
-                    <CodeSnippet code={snippets.seedanceText} />
-                    <CodeSnippet code={snippets.seedanceFrames} />
-                  </div>
-                  <CodeSnippet code={snippets.seedancePoll} />
-                  <Alert className='border-amber-200 bg-amber-50/80 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100'>
-                    <CircleDashed aria-hidden='true' />
-                    <AlertTitle>素材审核接口待接入</AlertTitle>
-                    <AlertDescription>
-                      目标文档包含真人 / 仿真人素材审核接口，用于返回{' '}
-                      <InlineCode>Asset://...</InlineCode>{' '}
-                      资源地址。本项目当前后端尚未接入该路由，涉及真人参考素材时先不要对客户开放。
-                    </AlertDescription>
-                  </Alert>
-                </div>
-
-                <div className='grid gap-3 md:grid-cols-3'>
-                  <InfoTile
-                    label='状态值'
-                    value='queued / in_progress / completed / failed'
-                  />
-                  <InfoTile
-                    label='轮询建议'
-                    value='约 30 秒一次，按业务设置超时'
-                  />
-                  <InfoTile
-                    label='素材要求'
-                    value='公网直链，不使用登录态或内网地址'
-                  />
-                </div>
-              </div>
-            </DocsSection>
-
-            <DocsSection id='tts' title='语音合成 TTS'>
+            <DocsSection
+              id='newapi-text'
+              eyebrow='NewAPI'
+              title='NewAPI 兼容文本'
+            >
               <p className='text-muted-foreground text-sm leading-6'>
-                接口：<InlineCode>POST /v1/audio/speech</InlineCode>。
-                返回音频二进制内容，客户端需要按文件流保存。
+                接口：
+                <InlineCode>POST /newapi/v1/chat/completions</InlineCode>。
+                该路径保留给已经按 NewAPI 文档集成的客户，入参和 OpenAI
+                兼容聊天接口保持一致。
               </p>
-              <div className='grid gap-4 xl:grid-cols-2'>
-                <CodeSnippet code={snippets.tts} />
-                <CodeSnippet code={snippets.ttsPython} language='python' />
-              </div>
-              <div className='grid gap-3 md:grid-cols-3'>
-                <InfoTile label='qwen3-tts-flash' value='voice: Cherry' />
-                <InfoTile
-                  label='MiniMax/speech-2.8-turbo'
-                  value='voice: male-qn-qingse'
-                />
-                <InfoTile
-                  label='MiniMax/speech-2.8-hd'
-                  value='voice: male-qn-qingse'
-                />
-              </div>
+              <CodeSnippet code={snippets.newapi} />
             </DocsSection>
 
             <DocsSection id='thinking' title='Claude thinking 使用说明'>

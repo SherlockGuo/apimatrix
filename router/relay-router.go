@@ -198,6 +198,42 @@ func SetRelayRouter(router *gin.Engine) {
 			controller.Relay(c, types.RelayFormatGemini)
 		})
 	}
+
+	anthropicRouter := router.Group("/anthropic")
+	anthropicRouter.Use(middleware.RouteTag("relay"))
+	anthropicRouter.Use(middleware.SystemPerformanceCheck())
+	anthropicRouter.Use(middleware.TokenAuth())
+	anthropicRouter.Use(middleware.ModelRequestRateLimit())
+	anthropicRouter.Use(middleware.Distribute())
+	{
+		anthropicRouter.POST("/messages", func(c *gin.Context) {
+			controller.Relay(c, types.RelayFormatClaude)
+		})
+	}
+
+	geminiV1Router := router.Group("/gemini/v1")
+	geminiV1Router.Use(middleware.RouteTag("relay"))
+	geminiV1Router.Use(middleware.SystemPerformanceCheck())
+	geminiV1Router.Use(middleware.TokenAuth())
+	geminiV1Router.Use(middleware.ModelRequestRateLimit())
+	geminiV1Router.Use(middleware.Distribute())
+	{
+		geminiV1Router.POST("/models/*path", func(c *gin.Context) {
+			controller.Relay(c, types.RelayFormatGemini)
+		})
+	}
+
+	newAPIRouter := router.Group("/newapi/v1")
+	newAPIRouter.Use(middleware.RouteTag("relay"))
+	newAPIRouter.Use(middleware.SystemPerformanceCheck())
+	newAPIRouter.Use(middleware.TokenAuth())
+	newAPIRouter.Use(middleware.ModelRequestRateLimit())
+	newAPIRouter.Use(middleware.Distribute())
+	{
+		newAPIRouter.POST("/chat/completions", func(c *gin.Context) {
+			controller.Relay(c, types.RelayFormatOpenAI)
+		})
+	}
 }
 
 func registerMjRouterGroup(relayMjRouter *gin.RouterGroup) {
