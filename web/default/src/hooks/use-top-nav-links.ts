@@ -78,6 +78,11 @@ export function useTopNavLinks(): TopNavLink[] {
     links.push({ title: t('Model Square'), href: '/pricing', requiresAuth })
   }
 
+  // Token Lookup
+  if (modules?.key !== false) {
+    links.push({ title: t('Token Lookup'), href: '/key' })
+  }
+
   // Rankings
   const rankings = modules?.rankings
   if (rankings && typeof rankings === 'object' && rankings.enabled) {

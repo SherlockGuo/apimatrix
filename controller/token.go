@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func buildMaskedTokenResponse(token *model.Token) *model.Token {
@@ -60,6 +62,55 @@ func SearchTokens(c *gin.Context) {
 	pageInfo.SetTotal(int(total))
 	pageInfo.SetItems(buildMaskedTokenResponses(tokens))
 	common.ApiSuccess(c, pageInfo)
+}
+
+type publicTokenLookupResponse struct {
+	Name           string `json:"name"`
+	Status         int    `json:"status"`
+	RemainQuota    int    `json:"remain_quota"`
+	UsedQuota      int    `json:"used_quota"`
+	UnlimitedQuota bool   `json:"unlimited_quota"`
+	ExpiredTime    int64  `json:"expired_time"`
+	AccessedTime   int64  `json:"accessed_time"`
+}
+
+type publicTokenLookupRequest struct {
+	Token string `json:"token"`
+}
+
+func LookupPublicToken(c *gin.Context) {
+	var req publicTokenLookupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+
+	key := strings.TrimSpace(req.Token)
+	if key == "" {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+
+	token, err := model.GetTokenByKey(strings.TrimPrefix(key, "sk-"), false)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			common.ApiSuccess(c, nil)
+			return
+		}
+		common.SysError("failed to lookup public token: " + err.Error())
+		common.ApiErrorMsg(c, "Token lookup failed.")
+		return
+	}
+
+	common.ApiSuccess(c, publicTokenLookupResponse{
+		Name:           token.Name,
+		Status:         token.Status,
+		RemainQuota:    token.RemainQuota,
+		UsedQuota:      token.UsedQuota,
+		UnlimitedQuota: token.UnlimitedQuota,
+		ExpiredTime:    token.ExpiredTime,
+		AccessedTime:   token.AccessedTime,
+	})
 }
 
 func GetToken(c *gin.Context) {

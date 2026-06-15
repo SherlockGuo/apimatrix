@@ -16,20 +16,32 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type TopNavLink } from '../types'
+import { api } from '@/lib/api'
 
-/**
- * Default top navigation links
- *
- * In practice, navigation links are dynamically fetched from backend.
- * Priority: Backend dynamic links > Provided navLinks > defaultTopNavLinks
- *
- */
-export const defaultTopNavLinks: TopNavLink[] = [
-  { title: 'Home', href: '/' },
-  { title: 'Console', href: '/dashboard' },
-  { title: 'Model Square', href: '/pricing' },
-  { title: 'Token Lookup', href: '/key' },
-  { title: 'Docs', href: '/docs' },
-  { title: 'About', href: '/about' },
-]
+export type TokenLookupResult = {
+  name: string
+  status: number
+  remain_quota: number
+  used_quota: number
+  unlimited_quota: boolean
+  expired_time: number
+  accessed_time: number
+}
+
+export async function lookupToken(token: string): Promise<TokenLookupResponse> {
+  const res = await api.post(
+    '/api/key/lookup',
+    { token },
+    {
+      skipBusinessError: true,
+      skipErrorHandler: true,
+    }
+  )
+  return res.data
+}
+
+export type TokenLookupResponse = {
+  success: boolean
+  message?: string
+  data?: TokenLookupResult | null
+}

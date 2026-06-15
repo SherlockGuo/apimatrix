@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -40,6 +41,14 @@ type tokenResponseItem struct {
 
 type tokenKeyResponse struct {
 	Key string `json:"key"`
+}
+
+type publicTokenLookupTestResponse struct {
+	Name           string `json:"name"`
+	Status         int    `json:"status"`
+	RemainQuota    int    `json:"remain_quota"`
+	UsedQuota      int    `json:"used_quota"`
+	UnlimitedQuota bool   `json:"unlimited_quota"`
 }
 
 type sqliteColumnInfo struct {
@@ -203,6 +212,13 @@ func newAuthenticatedContext(t *testing.T, method string, target string, body an
 		ctx.Request.Header.Set("Content-Type", "application/json")
 	}
 	ctx.Set("id", userID)
+	return ctx, recorder
+}
+
+func newRequestContext(t *testing.T, method string, target string, body any) (*gin.Context, *httptest.ResponseRecorder) {
+	t.Helper()
+
+	ctx, recorder := newAuthenticatedContext(t, method, target, body, 0)
 	return ctx, recorder
 }
 
@@ -442,6 +458,110 @@ func TestSearchTokensMasksKeyInResponse(t *testing.T) {
 	}
 	if strings.Contains(recorder.Body.String(), token.Key) {
 		t.Fatalf("search response leaked raw token key: %s", recorder.Body.String())
+	}
+}
+
+func TestLookupPublicTokenReturnsSafeSummary(t *testing.T) {
+	db := setupTokenControllerTestDB(t)
+	token := seedToken(t, db, 1, "lookup-token", "lookup1234token5678")
+
+	ctx, recorder := newRequestContext(
+		t,
+		http.MethodPost,
+		"/api/key/lookup",
+		map[string]any{"token": "sk-" + token.Key},
+	)
+	LookupPublicToken(ctx)
+
+	response := decodeAPIResponse(t, recorder)
+	if !response.Success {
+		t.Fatalf("expected public lookup to succeed, got message: %s", response.Message)
+	}
+
+	var summary publicTokenLookupTestResponse
+	if err := common.Unmarshal(response.Data, &summary); err != nil {
+		t.Fatalf("failed to decode public lookup response: %v", err)
+	}
+	if summary.Name != token.Name {
+		t.Fatalf("expected token name %q, got %q", token.Name, summary.Name)
+	}
+	if summary.Status != token.Status {
+		t.Fatalf("expected token status %d, got %d", token.Status, summary.Status)
+	}
+	if summary.RemainQuota != token.RemainQuota {
+		t.Fatalf("expected remain quota %d, got %d", token.RemainQuota, summary.RemainQuota)
+	}
+	if strings.Contains(recorder.Body.String(), token.Key) {
+		t.Fatalf("public lookup response leaked raw token key: %s", recorder.Body.String())
+	}
+	if strings.Contains(recorder.Body.String(), `"user_id"`) {
+		t.Fatalf("public lookup response leaked user id: %s", recorder.Body.String())
+	}
+}
+
+func TestLookupPublicTokenMissingReturnsNullData(t *testing.T) {
+	setupTokenControllerTestDB(t)
+
+	ctx, recorder := newRequestContext(
+		t,
+		http.MethodPost,
+		"/api/key/lookup",
+		map[string]any{"token": "sk-missing"},
+	)
+	LookupPublicToken(ctx)
+
+	response := decodeAPIResponse(t, recorder)
+	if !response.Success {
+		t.Fatalf("expected missing lookup to succeed with null data, got message: %s", response.Message)
+	}
+	if string(response.Data) != "null" {
+		t.Fatalf("expected null data for missing token, got %s", string(response.Data))
+	}
+}
+
+func TestLookupPublicTokenRejectsEmptyToken(t *testing.T) {
+	setupTokenControllerTestDB(t)
+
+	ctx, recorder := newRequestContext(
+		t,
+		http.MethodPost,
+		"/api/key/lookup",
+		map[string]any{"token": ""},
+	)
+	LookupPublicToken(ctx)
+
+	response := decodeAPIResponse(t, recorder)
+	if response.Success {
+		t.Fatalf("expected empty lookup to fail")
+	}
+}
+
+func TestLookupPublicTokenRouteDisablesCache(t *testing.T) {
+	db := setupTokenControllerTestDB(t)
+	token := seedToken(t, db, 1, "lookup-cache-token", "cache1234token5678")
+
+	router := gin.New()
+	router.POST("/api/key/lookup", middleware.DisableCache(), LookupPublicToken)
+
+	payload, err := common.Marshal(map[string]any{"token": "sk-" + token.Key})
+	if err != nil {
+		t.Fatalf("failed to marshal lookup request: %v", err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/key/lookup", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, req)
+
+	response := decodeAPIResponse(t, recorder)
+	if !response.Success {
+		t.Fatalf("expected public lookup route to succeed, got message: %s", response.Message)
+	}
+	if recorder.Header().Get("Cache-Control") != "no-store, no-cache, must-revalidate, private, max-age=0" {
+		t.Fatalf("expected no-store cache header, got %q", recorder.Header().Get("Cache-Control"))
+	}
+	if recorder.Header().Get("Pragma") != "no-cache" {
+		t.Fatalf("expected no-cache pragma header, got %q", recorder.Header().Get("Pragma"))
 	}
 }
 
