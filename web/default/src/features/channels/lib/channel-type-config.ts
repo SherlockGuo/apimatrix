@@ -16,6 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import {
+  CROSS_BORDER_TEXT_MODELS,
+  CROSS_BORDER_UPSTREAM_BASE_URL,
+} from '@/lib/single-upstream'
 import { CHANNEL_TYPES } from '../constants'
 
 // ============================================================================
@@ -50,16 +54,12 @@ export const CHANNEL_TYPE_CONFIGS: Record<number, ChannelTypeConfig> = {
     id: 1,
     name: CHANNEL_TYPES[1],
     icon: 'openai',
-    defaultBaseUrl: 'https://api.openai.com',
-    requiresOrganization: true,
+    defaultBaseUrl: CROSS_BORDER_UPSTREAM_BASE_URL,
+    requiresOrganization: false,
     hints: {
-      baseUrl: 'Default: https://api.openai.com',
-      key: 'Format: sk-...',
-      models: 'gpt-4,gpt-4-turbo,gpt-3.5-turbo',
-    },
-    validation: {
-      keyFormat: /^sk-/,
-      keyMinLength: 20,
+      baseUrl: 'Default: single upstream API endpoint',
+      key: 'Paste the upstream Bearer token provided by the API provider',
+      models: CROSS_BORDER_TEXT_MODELS.map((item) => item.model).join(','),
     },
   },
   3: {

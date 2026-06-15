@@ -294,6 +294,9 @@ func migrateDB() error {
 			return err
 		}
 	}
+	if err := EnsureSingleUpstreamChannelFromEnv(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -364,6 +367,9 @@ func migrateDBFast() error {
 		}
 	}
 	common.SysLog("database migrated")
+	if err := EnsureSingleUpstreamChannelFromEnv(); err != nil {
+		return err
+	}
 	return nil
 }
 

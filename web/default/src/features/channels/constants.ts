@@ -380,6 +380,7 @@ export const MODEL_FETCHABLE_TYPES = new Set([
 ])
 
 export const TYPE_TO_KEY_PROMPT: Record<number, string> = {
+  1: 'Paste the upstream Bearer token provided by the API provider',
   15: 'Format: APIKey|SecretKey',
   18: 'Format: APPID|APISecret|APIKey',
   22: 'Format: APIKey-AppId, e.g., fastgpt-0sp2gtvfdgyi4k30jwlgwf1i-64f335d84283f05518e9e041',
@@ -391,6 +392,7 @@ export const TYPE_TO_KEY_PROMPT: Record<number, string> = {
 }
 
 export const CHANNEL_TYPE_WARNINGS: Record<number, string> = {
+  1: 'This deployment is configured for the single upstream OpenAI-compatible endpoint. Use the provider token here.',
   3: 'For channels added after May 10, 2025, no need to remove "." from model names during deployment',
   8: 'If connecting to upstream One API or New API relay projects, use OpenAI type instead unless you know what you are doing',
   37: 'Dify channels only support chatflow and agent, and agent does not support images',
