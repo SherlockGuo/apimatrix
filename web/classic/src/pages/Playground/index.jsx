@@ -42,10 +42,8 @@ import {
 import {
   getLogo,
   stringToColor,
-  buildMessageContent,
   createMessage,
   createLoadingAssistantMessage,
-  getTextContent,
   buildApiPayload,
   encodeToBase64,
 } from '../../helpers';
@@ -199,35 +197,6 @@ const Playground = () => {
       // 默认预览逻辑
       let messages = [...message];
 
-      // 如果存在用户消息
-      if (
-        !(
-          messages.length === 0 ||
-          messages.every((msg) => msg.role !== MESSAGE_ROLES.USER)
-        )
-      ) {
-        // 处理最后一个用户消息的图片
-        for (let i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].role === MESSAGE_ROLES.USER) {
-            if (inputs.imageEnabled && inputs.imageUrls) {
-              const validImageUrls = inputs.imageUrls.filter(
-                (url) => url.trim() !== '',
-              );
-              if (validImageUrls.length > 0) {
-                const textContent = getTextContent(messages[i]) || '示例消息';
-                const content = buildMessageContent(
-                  textContent,
-                  validImageUrls,
-                  true,
-                );
-                messages[i] = { ...messages[i], content };
-              }
-            }
-            break;
-          }
-        }
-      }
-
       return buildApiPayload(messages, null, inputs, parameterEnabled);
     } catch (error) {
       console.error('构造预览请求体失败:', error);
@@ -268,19 +237,10 @@ const Playground = () => {
     }
 
     // 默认模式
-    const validImageUrls = inputs.imageUrls.filter((url) => url.trim() !== '');
-    const messageContent = buildMessageContent(
-      content,
-      validImageUrls,
-      inputs.imageEnabled,
-    );
-    const userMessageWithImages = createMessage(
-      MESSAGE_ROLES.USER,
-      messageContent,
-    );
+    const userMessageText = createMessage(MESSAGE_ROLES.USER, content);
 
     setMessage((prevMessage) => {
-      const newMessages = [...prevMessage, userMessageWithImages];
+      const newMessages = [...prevMessage, userMessageText];
 
       const payload = buildApiPayload(
         newMessages,
@@ -289,13 +249,6 @@ const Playground = () => {
         parameterEnabled,
       );
       sendRequest(payload, inputs.stream);
-
-      // 禁用图片模式
-      if (inputs.imageEnabled) {
-        setTimeout(() => {
-          handleInputChange('imageEnabled', false);
-        }, 100);
-      }
 
       // 发送消息后保存，传入新消息列表（包含用户消息和加载消息）
       const messagesWithLoading = [...newMessages, loadingMessage];
@@ -437,24 +390,11 @@ const Playground = () => {
     setTimeout(() => saveMessagesImmediately([]), 0);
   }, [setMessage, saveMessagesImmediately]);
 
-  // 处理粘贴图片
-  const handlePasteImage = useCallback(
-    (base64Data) => {
-      if (!inputs.imageEnabled) {
-        return;
-      }
-      // 添加图片到 imageUrls 数组
-      const newUrls = [...(inputs.imageUrls || []), base64Data];
-      handleInputChange('imageUrls', newUrls);
-    },
-    [inputs.imageEnabled, inputs.imageUrls, handleInputChange],
-  );
-
   // Playground Context 值
   const playgroundContextValue = {
-    onPasteImage: handlePasteImage,
-    imageUrls: inputs.imageUrls || [],
-    imageEnabled: inputs.imageEnabled || false,
+    onPasteImage: () => {},
+    imageUrls: [],
+    imageEnabled: false,
   };
 
   return (

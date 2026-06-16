@@ -96,22 +96,17 @@ const endpointTypeOptions: Array<{ value: string; label: string }> = [
     value: 'openai-response-compact',
     label: 'OpenAI Response Compaction (/v1/responses/compact)',
   },
-  { value: 'anthropic', label: 'Anthropic (/v1/messages)' },
+  { value: 'anthropic', label: 'Anthropic (/anthropic/messages)' },
   {
     value: 'gemini',
     label: 'Gemini (/v1beta/models/{model}:generateContent)',
   },
   { value: 'jina-rerank', label: 'Jina Rerank (/v1/rerank)' },
-  {
-    value: 'image-generation',
-    label: 'Image Generation (/v1/images/generations)',
-  },
   { value: 'embeddings', label: 'Embeddings (/v1/embeddings)' },
 ]
 
 const STREAM_INCOMPATIBLE_ENDPOINTS = new Set([
   'embeddings',
-  'image-generation',
   'jina-rerank',
   'openai-response-compact',
 ])

@@ -96,14 +96,14 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		return fmt.Errorf("readAll failed for task %s: %w", taskId, err)
 	}
 
-	logger.LogDebug(ctx, "UpdateVideoSingleTask response: %s", responseBody)
+	logger.LogDebug(ctx, common.RedactedBodyLog("UpdateVideoSingleTask response body", len(responseBody)))
 
 	taskResult := &relaycommon.TaskInfo{}
 	// try parse as New API response format
 	var responseItems dto.TaskResponse[model.Task]
 	if err = common.Unmarshal(responseBody, &responseItems); err == nil && responseItems.IsSuccess() {
-		logger.LogDebug(ctx, "UpdateVideoSingleTask parsed as new api response format: %+v", responseItems)
 		t := responseItems.Data
+		logger.LogDebug(ctx, "UpdateVideoSingleTask parsed as new api response format: task_id=%s status=%s progress=%s data_bytes=%d fail_reason_redacted=%t", t.TaskID, t.Status, t.Progress, len(t.Data), t.FailReason != "")
 		taskResult.TaskID = t.TaskID
 		taskResult.Status = string(t.Status)
 		taskResult.Url = t.FailReason
@@ -116,7 +116,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		task.Data = redactVideoResponseBody(responseBody)
 	}
 
-	logger.LogDebug(ctx, "UpdateVideoSingleTask taskResult: %+v", taskResult)
+	logger.LogDebug(ctx, "UpdateVideoSingleTask taskResult: task_id=%s status=%s progress=%s reason_redacted=%t url_redacted=%t", taskResult.TaskID, taskResult.Status, taskResult.Progress, taskResult.Reason != "", taskResult.Url != "")
 
 	now := time.Now().Unix()
 	if taskResult.Status == "" {
@@ -239,14 +239,14 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			}
 		}
 	case model.TaskStatusFailure:
-		logger.LogJson(ctx, fmt.Sprintf("Task %s failed", taskId), task)
+		logger.LogWarn(ctx, fmt.Sprintf("Task %s failed, task_status=%s, progress=%s", taskId, task.Status, task.Progress))
 		task.Status = model.TaskStatusFailure
 		task.Progress = "100%"
 		if task.FinishTime == 0 {
 			task.FinishTime = now
 		}
-		task.FailReason = taskResult.Reason
-		logger.LogInfo(ctx, fmt.Sprintf("Task %s failed: %s", task.TaskID, task.FailReason))
+		task.FailReason = common.RedactLogContent(taskResult.Reason)
+		logger.LogInfo(ctx, fmt.Sprintf("Task %s failed: reason_redacted=%t", task.TaskID, task.FailReason != ""))
 		taskResult.Progress = "100%"
 		if quota != 0 {
 			if preStatus != model.TaskStatusFailure {

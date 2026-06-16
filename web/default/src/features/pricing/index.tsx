@@ -17,9 +17,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useCallback, useMemo, useState } from 'react'
+import { Link } from '@tanstack/react-router'
+import { BookOpenText, KeyRound, MessageSquareCode, Route } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { PublicLayout } from '@/components/layout'
 import { PageTransition } from '@/components/page-transition'
+import { Button } from '@/components/ui/button'
 import {
   LoadingSkeleton,
   EmptyState,
@@ -33,6 +36,58 @@ import {
 import { EXCLUDED_GROUPS, VIEW_MODES } from './constants'
 import { useFilters } from './hooks/use-filters'
 import { usePricingData } from './hooks/use-pricing-data'
+import { inferModelMetadata } from './lib/model-metadata'
+import type { PricingModel } from './types'
+
+const MEDIA_ENDPOINT_TYPES = new Set(['image-generation', 'openai-video'])
+const MEDIA_MODEL_NAME_PATTERN =
+  /\b(?:tts|voice|audio|whisper|realtime|video|sora|veo|kling|pika|imagen|dall[-_ ]?e|midjourney|mj)\b/i
+
+const PROTOCOL_CARDS = [
+  {
+    title: 'OpenAI compatible',
+    endpoint: '/v1/chat/completions',
+    description: 'Chat completions for text and reasoning models',
+  },
+  {
+    title: 'Claude Messages',
+    endpoint: '/anthropic/messages',
+    description: 'Anthropic-compatible messages endpoint',
+  },
+  {
+    title: 'Gemini native',
+    endpoint: '/gemini/v1/models/{model}:generateContent',
+    description: 'Native Gemini text generation route',
+  },
+]
+
+function isTextFirstModel(model: PricingModel) {
+  const endpoints = model.supported_endpoint_types || []
+  if (endpoints.some((endpoint) => MEDIA_ENDPOINT_TYPES.has(endpoint))) {
+    return false
+  }
+
+  if (
+    model.image_ratio != null ||
+    model.audio_ratio != null ||
+    model.audio_completion_ratio != null
+  ) {
+    return false
+  }
+
+  if (MEDIA_MODEL_NAME_PATTERN.test(model.model_name || '')) {
+    return false
+  }
+
+  const metadata = inferModelMetadata(model)
+  const mediaModalities = new Set(['image', 'audio', 'video'])
+  return (
+    !metadata.input_modalities.some((modality) => mediaModalities.has(modality)) &&
+    !metadata.output_modalities.some((modality) =>
+      mediaModalities.has(modality)
+    )
+  )
+}
 
 export function Pricing() {
   const { t } = useTranslation()
@@ -51,6 +106,11 @@ export function Pricing() {
     priceRate,
     usdExchangeRate,
   } = usePricingData()
+
+  const textModels = useMemo(
+    () => (models || []).filter(isTextFirstModel),
+    [models]
+  )
 
   const {
     searchInput,
@@ -79,7 +139,7 @@ export function Pricing() {
     availableTags,
     clearFilters,
     clearSearch,
-  } = useFilters(models || [])
+  } = useFilters(textModels)
 
   const handleModelClick = useCallback((modelName: string) => {
     setSelectedModelName(modelName)
@@ -88,11 +148,11 @@ export function Pricing() {
   const selectedModel = useMemo(
     () =>
       selectedModelName
-        ? (models || []).find(
+        ? textModels.find(
             (model) => model.model_name === selectedModelName
           ) || null
         : null,
-    [models, selectedModelName]
+    [selectedModelName, textModels]
   )
 
   const availableGroups = useMemo(
@@ -157,45 +217,108 @@ export function Pricing() {
   return (
     <PublicLayout showMainContainer={false}>
       <div className='relative'>
-        <div
-          aria-hidden
-          className='pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.10]'
-          style={{
-            background: [
-              'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.72 0.18 250 / 80%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.65 0.15 200 / 60%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.70 0.12 280 / 40%) 0%, transparent 70%)',
-            ].join(', '),
-            maskImage:
-              'linear-gradient(to bottom, black 40%, transparent 100%)',
-            WebkitMaskImage:
-              'linear-gradient(to bottom, black 40%, transparent 100%)',
-          }}
-        />
         <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
-          <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
-            <h1 className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'>
-              {t('Model Square')}
-            </h1>
-            <p className='text-muted-foreground/80 mt-3 text-sm sm:mt-4 sm:text-base'>
-              {t('This site currently has {{count}} models enabled', {
-                count: models?.length || 0,
-              })}
-            </p>
-            <p className='text-muted-foreground/60 mx-auto mt-2 max-w-2xl text-xs leading-relaxed sm:text-sm'>
-              {t(
-                'Discover curated AI models, compare pricing and capabilities, and choose the right model for every scenario.'
-              )}
-            </p>
-            <SearchBar
-              value={searchInput}
-              onChange={setSearchInput}
-              onClear={clearSearch}
-              placeholder={t(
-                'Search model name, provider, endpoint, or tag...'
-              )}
-              className='mx-auto mt-4 max-w-2xl sm:mt-6'
-            />
+          <header className='bg-card mb-5 overflow-hidden rounded-lg border shadow-xs sm:mb-6'>
+            <div className='grid gap-0 xl:grid-cols-[minmax(0,1fr)_34rem]'>
+              <div className='space-y-5 p-4 sm:p-6'>
+                <div className='space-y-2'>
+                  <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium tracking-wider uppercase'>
+                    <MessageSquareCode className='size-3.5' />
+                    {t('Text model catalog')}
+                  </div>
+                  <h1 className='text-2xl leading-tight font-semibold tracking-tight sm:text-3xl'>
+                    {t('Model Square')}
+                  </h1>
+                  <p className='text-muted-foreground max-w-3xl text-sm leading-relaxed sm:text-base'>
+                    {t(
+                      'Browse enabled text chat and reasoning models for OpenAI-compatible, Claude-compatible, and Gemini-compatible API calls.'
+                    )}
+                  </p>
+                </div>
+
+                <div className='grid gap-2 sm:grid-cols-3'>
+                  <div className='rounded-md border p-3'>
+                    <div className='text-muted-foreground text-xs'>
+                      {t('Available text models')}
+                    </div>
+                    <div className='mt-1 font-mono text-2xl font-semibold tabular-nums'>
+                      {textModels.length}
+                    </div>
+                  </div>
+                  <div className='rounded-md border p-3'>
+                    <div className='text-muted-foreground text-xs'>
+                      {t('Providers')}
+                    </div>
+                    <div className='mt-1 font-mono text-2xl font-semibold tabular-nums'>
+                      {(vendors || []).length}
+                    </div>
+                  </div>
+                  <div className='rounded-md border p-3'>
+                    <div className='text-muted-foreground text-xs'>
+                      {t('Media routes')}
+                    </div>
+                    <div className='mt-1 text-sm font-semibold'>
+                      {t('Not enabled')}
+                    </div>
+                  </div>
+                </div>
+
+                <SearchBar
+                  value={searchInput}
+                  onChange={setSearchInput}
+                  onClear={clearSearch}
+                  placeholder={t(
+                    'Search model name, provider, endpoint, or tag...'
+                  )}
+                  className='max-w-3xl'
+                />
+              </div>
+
+              <div className='border-t p-4 sm:p-6 xl:border-t-0 xl:border-l'>
+                <div className='mb-3 flex items-center justify-between gap-3'>
+                  <div className='text-sm font-semibold'>
+                    {t('Compatible API routes')}
+                  </div>
+                  <div className='flex gap-2'>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      render={<Link to='/docs' />}
+                    >
+                      <BookOpenText className='size-4' />
+                      {t('Docs')}
+                    </Button>
+                    <Button size='sm' render={<Link to='/keys' />}>
+                      <KeyRound className='size-4' />
+                      {t('API Keys')}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className='space-y-2'>
+                  {PROTOCOL_CARDS.map((item) => (
+                    <div key={item.title} className='rounded-md border p-3'>
+                      <div className='flex items-start gap-2'>
+                        <div className='bg-muted flex size-8 shrink-0 items-center justify-center rounded-md'>
+                          <Route className='text-primary size-4' />
+                        </div>
+                        <div className='min-w-0'>
+                          <div className='text-sm font-medium'>
+                            {t(item.title)}
+                          </div>
+                          <div className='text-muted-foreground mt-0.5 truncate font-mono text-xs'>
+                            {item.endpoint}
+                          </div>
+                          <div className='text-muted-foreground mt-1 text-xs'>
+                            {t(item.description)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </header>
 
           <div className='grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)]'>
@@ -214,7 +337,7 @@ export function Pricing() {
               groups={availableGroups}
               groupRatios={groupRatio}
               tags={availableTags}
-              models={models || []}
+              models={textModels}
               hasActiveFilters={hasActiveFilters}
               onClearFilters={clearFilters}
               className='hover-scrollbar sticky top-4 hidden max-h-[calc(100dvh-2rem)] self-start overflow-y-auto xl:block'
@@ -223,7 +346,7 @@ export function Pricing() {
             <main className='min-w-0 space-y-4'>
               <PricingToolbar
                 filteredCount={filteredModels.length}
-                totalCount={models?.length}
+                totalCount={textModels.length}
                 sortBy={sortBy}
                 onSortChange={setSortBy}
                 tokenUnit={tokenUnit}
@@ -246,7 +369,7 @@ export function Pricing() {
                 groups={availableGroups}
                 groupRatios={groupRatio}
                 tags={availableTags}
-                models={models || []}
+                models={textModels}
                 hasActiveFilters={hasActiveFilters}
                 activeFilterCount={activeFilterCount}
                 onClearFilters={clearFilters}

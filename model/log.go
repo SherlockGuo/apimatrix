@@ -231,7 +231,8 @@ func RecordTopupLog(userId int, content string, callerIp string, paymentMethod s
 
 func RecordErrorLog(c *gin.Context, userId int, channelId int, modelName string, tokenName string, content string, tokenId int, useTimeSeconds int,
 	isStream bool, group string, other map[string]interface{}) {
-	logger.LogInfo(c, fmt.Sprintf("record error log: userId=%d, channelId=%d, modelName=%s, tokenName=%s, content=%s", userId, channelId, modelName, tokenName, common.LocalLogPreview(content)))
+	logContent := common.RedactLogContent(content)
+	logger.LogInfo(c, fmt.Sprintf("record error log: userId=%d, channelId=%d, modelName=%s, tokenName=%s, content_redacted=%t", userId, channelId, modelName, tokenName, logContent != ""))
 	username := c.GetString("username")
 	requestId := c.GetString(common.RequestIdKey)
 	upstreamRequestId := c.GetString(common.UpstreamRequestIdKey)
@@ -248,7 +249,7 @@ func RecordErrorLog(c *gin.Context, userId int, channelId int, modelName string,
 		Username:         username,
 		CreatedAt:        common.GetTimestamp(),
 		Type:             LogTypeError,
-		Content:          content,
+		Content:          logContent,
 		PromptTokens:     0,
 		CompletionTokens: 0,
 		TokenName:        tokenName,
@@ -294,7 +295,8 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	if !common.LogConsumeEnabled {
 		return
 	}
-	logger.LogInfo(c, fmt.Sprintf("record consume log: userId=%d, params=%s", userId, common.GetJsonString(params)))
+	logContent := common.RedactLogContent(params.Content)
+	logger.LogInfo(c, fmt.Sprintf("record consume log: userId=%d, channelId=%d, modelName=%s, tokenName=%s, quota=%d, promptTokens=%d, completionTokens=%d", userId, params.ChannelId, params.ModelName, params.TokenName, params.Quota, params.PromptTokens, params.CompletionTokens))
 	username := c.GetString("username")
 	requestId := c.GetString(common.RequestIdKey)
 	upstreamRequestId := c.GetString(common.UpstreamRequestIdKey)
@@ -311,7 +313,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 		Username:         username,
 		CreatedAt:        common.GetTimestamp(),
 		Type:             LogTypeConsume,
-		Content:          params.Content,
+		Content:          logContent,
 		PromptTokens:     params.PromptTokens,
 		CompletionTokens: params.CompletionTokens,
 		TokenName:        params.TokenName,
@@ -360,6 +362,10 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 		return
 	}
 	username, _ := GetUsernameById(params.UserId, false)
+	logContent := params.Content
+	if params.LogType == LogTypeConsume || params.LogType == LogTypeError {
+		logContent = common.RedactLogContent(params.Content)
+	}
 	tokenName := ""
 	if params.TokenId > 0 {
 		if token, err := GetTokenById(params.TokenId); err == nil {
@@ -371,7 +377,7 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 		Username:  username,
 		CreatedAt: common.GetTimestamp(),
 		Type:      params.LogType,
-		Content:   params.Content,
+		Content:   logContent,
 		TokenName: tokenName,
 		ModelName: params.ModelName,
 		Quota:     params.Quota,

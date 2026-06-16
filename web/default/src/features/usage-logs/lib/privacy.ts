@@ -16,14 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-// ============================================================================
-// Affiliate Functions
-// ============================================================================
 
-/**
- * Generate affiliate registration link
- */
-export function generateAffiliateLink(affCode: string): string {
-  if (typeof window === 'undefined') return ''
-  return `${window.location.origin}/sign-up?aff=${affCode}`
+export const REDACTED_LOG_CONTENT = '[content redacted for privacy]'
+
+export function isRedactedLogContent(content?: string | null): boolean {
+  return content?.trim() === REDACTED_LOG_CONTENT
 }

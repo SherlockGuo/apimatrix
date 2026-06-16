@@ -1,6 +1,7 @@
 package claude
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -385,6 +386,30 @@ func RequestOpenAI2ClaudeMessage(c *gin.Context, textRequest dto.GeneralOpenAIRe
 						if source == nil {
 							continue
 						}
+						if mediaMessage.Type == dto.ContentTypeFile {
+							file := mediaMessage.GetFile()
+							if file == nil {
+								continue
+							}
+							mimeType := getClaudeFileMimeType(file)
+							if strings.HasPrefix(mimeType, "text/") {
+								text, err := decodeClaudeTextFile(file.FileData)
+								if err != nil {
+									return nil, fmt.Errorf("decode text file failed: %s", err.Error())
+								}
+								if text != "" {
+									claudeMediaMessages = append(claudeMediaMessages, dto.ClaudeMediaMessage{
+										Type: "text",
+										Text: common.GetPointer[string](text),
+									})
+								}
+								continue
+							}
+							if !strings.HasPrefix(mimeType, "application/pdf") {
+								continue
+							}
+							source = types.NewFileSourceFromData(file.FileData, mimeType)
+						}
 						base64Data, mimeType, err := service.GetBase64Data(c, source, "formatting image for Claude")
 						if err != nil {
 							return nil, fmt.Errorf("get file data failed: %s", err.Error())
@@ -436,6 +461,40 @@ func RequestOpenAI2ClaudeMessage(c *gin.Context, textRequest dto.GeneralOpenAIRe
 	claudeRequest.Prompt = ""
 	claudeRequest.Messages = claudeMessages
 	return &claudeRequest, nil
+}
+
+func getClaudeFileMimeType(file *dto.MessageFile) string {
+	if file == nil {
+		return ""
+	}
+	if strings.HasPrefix(file.FileData, "data:") {
+		header := file.FileData
+		if idx := strings.Index(header, ","); idx >= 0 {
+			header = header[:idx]
+		}
+		if strings.Contains(header, ":") && strings.Contains(header, ";") {
+			mimeStart := strings.Index(header, ":") + 1
+			mimeEnd := strings.Index(header, ";")
+			if mimeStart < mimeEnd {
+				return header[mimeStart:mimeEnd]
+			}
+		}
+	}
+	if idx := strings.LastIndex(file.FileName, "."); idx >= 0 && idx < len(file.FileName)-1 {
+		return service.GetMimeTypeByExtension(file.FileName[idx+1:])
+	}
+	return ""
+}
+
+func decodeClaudeTextFile(fileData string) (string, error) {
+	if idx := strings.Index(fileData, ","); strings.HasPrefix(fileData, "data:") && idx >= 0 {
+		fileData = fileData[idx+1:]
+	}
+	data, err := base64.StdEncoding.DecodeString(fileData)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 func StreamResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.ChatCompletionsStreamResponse {
@@ -869,6 +928,55 @@ func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, clau
 	}
 }
 
+func claudeResponseTextForUsage(claudeResponse *dto.ClaudeResponse) string {
+	if claudeResponse == nil {
+		return ""
+	}
+	var responseText strings.Builder
+	if claudeResponse.Completion != "" {
+		responseText.WriteString(claudeResponse.Completion)
+	}
+	for _, content := range claudeResponse.Content {
+		if content.Text != nil {
+			responseText.WriteString(*content.Text)
+		}
+		if content.Thinking != nil {
+			responseText.WriteString(*content.Thinking)
+		}
+	}
+	return responseText.String()
+}
+
+func applyClaudeTextUsageFallback(c *gin.Context, info *relaycommon.RelayInfo, claudeInfo *ClaudeResponseInfo, claudeResponse *dto.ClaudeResponse) {
+	if claudeInfo == nil {
+		return
+	}
+	if claudeInfo.Usage == nil {
+		claudeInfo.Usage = &dto.Usage{}
+	}
+	responseText := claudeResponseTextForUsage(claudeResponse)
+	if responseText == "" && claudeInfo.Usage.PromptTokens != 0 {
+		claudeInfo.Usage.TotalTokens = claudeInfo.Usage.PromptTokens + claudeInfo.Usage.CompletionTokens
+		claudeInfo.Usage.UsageSemantic = "anthropic"
+		return
+	}
+	if claudeInfo.Usage.PromptTokens != 0 && claudeInfo.Usage.CompletionTokens != 0 {
+		claudeInfo.Usage.TotalTokens = claudeInfo.Usage.PromptTokens + claudeInfo.Usage.CompletionTokens
+		claudeInfo.Usage.UsageSemantic = "anthropic"
+		return
+	}
+
+	fallback := service.ResponseText2Usage(c, responseText, info.UpstreamModelName, info.GetEstimatePromptTokens())
+	if claudeInfo.Usage.PromptTokens == 0 {
+		claudeInfo.Usage.PromptTokens = fallback.PromptTokens
+	}
+	if claudeInfo.Usage.CompletionTokens == 0 {
+		claudeInfo.Usage.CompletionTokens = fallback.CompletionTokens
+	}
+	claudeInfo.Usage.TotalTokens = claudeInfo.Usage.PromptTokens + claudeInfo.Usage.CompletionTokens
+	claudeInfo.Usage.UsageSemantic = "anthropic"
+}
+
 func ClaudeStreamHandler(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (*dto.Usage, *types.NewAPIError) {
 	claudeInfo := &ClaudeResponseInfo{
 		ResponseId:   helper.GetResponseID(c),
@@ -915,6 +1023,7 @@ func HandleClaudeResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		claudeInfo.Usage.ClaudeCacheCreation5mTokens = claudeResponse.Usage.GetCacheCreation5mTokens()
 		claudeInfo.Usage.ClaudeCacheCreation1hTokens = claudeResponse.Usage.GetCacheCreation1hTokens()
 	}
+	applyClaudeTextUsageFallback(c, info, claudeInfo, &claudeResponse)
 	var responseData []byte
 	switch info.RelayFormat {
 	case types.RelayFormatOpenAI:
@@ -950,7 +1059,7 @@ func ClaudeHandler(c *gin.Context, resp *http.Response, info *relaycommon.RelayI
 	if err != nil {
 		return nil, types.NewError(err, types.ErrorCodeBadResponseBody)
 	}
-	logger.LogDebug(c, "responseBody: %s", responseBody)
+	logger.LogDebug(c, common.RedactedBodyLog("response body", len(responseBody)))
 	handleErr := HandleClaudeResponseData(c, info, claudeInfo, resp, responseBody)
 	if handleErr != nil {
 		return nil, handleErr

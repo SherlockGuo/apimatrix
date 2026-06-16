@@ -3221,18 +3221,18 @@ const EditChannelModal = (props) => {
                           type='info'
                           description={
                             <div>
-                              <Text strong>{t('邀请链接')}:</Text>
+                              <Text strong>URL:</Text>
                               <Text
                                 link
                                 underline
                                 className='ml-2 cursor-pointer'
                                 onClick={() =>
                                   window.open(
-                                    'https://cloud.siliconflow.cn/i/hij0YNTZ',
+                                    'https://cloud.siliconflow.cn',
                                   )
                                 }
                               >
-                                https://cloud.siliconflow.cn/i/hij0YNTZ
+                                https://cloud.siliconflow.cn
                               </Text>
                             </div>
                           }

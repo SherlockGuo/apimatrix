@@ -345,7 +345,7 @@ func buildChannelAffinityCacheKeySuffix(rule operation_setting.ChannelAffinityRu
 	if rule.IncludeUsingGroup && usingGroup != "" {
 		parts = append(parts, usingGroup)
 	}
-	parts = append(parts, affinityValue)
+	parts = append(parts, affinityCacheKeyPart(affinityValue))
 	return strings.Join(parts, ":")
 }
 
@@ -421,17 +421,19 @@ func affinityFingerprint(s string) string {
 	return hex
 }
 
+func affinityCacheKeyPart(s string) string {
+	if s == "" {
+		return ""
+	}
+	return common.Sha1([]byte(s))
+}
+
 func buildChannelAffinityKeyHint(s string) string {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return ""
 	}
-	s = strings.ReplaceAll(s, "\n", " ")
-	s = strings.ReplaceAll(s, "\r", " ")
-	if len(s) <= 12 {
-		return s
-	}
-	return s[:4] + "..." + s[len(s)-4:]
+	return common.RedactedLogContent
 }
 
 func cloneStringAnyMap(src map[string]interface{}) map[string]interface{} {
@@ -524,7 +526,6 @@ func appendChannelAffinityTemplateAdminInfo(c *gin.Context, meta channelAffinity
 		"key_key":           meta.KeySourceKey,
 		"key_path":          meta.KeySourcePath,
 		"key_hint":          meta.KeyHint,
-		"key_fp":            meta.KeyFingerprint,
 		"override_template": templateInfo,
 	})
 }
@@ -694,7 +695,6 @@ func MarkChannelAffinityUsed(c *gin.Context, selectedGroup string, channelID int
 		"key_key":        meta.KeySourceKey,
 		"key_path":       meta.KeySourcePath,
 		"key_hint":       meta.KeyHint,
-		"key_fp":         meta.KeyFingerprint,
 	}
 	c.Set(ginKeyChannelAffinityLogInfo, info)
 }

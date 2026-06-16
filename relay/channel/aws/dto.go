@@ -51,7 +51,7 @@ func formatRequest(requestBody io.Reader, requestHeader http.Header) (*AwsClaude
 			awsClaudeRequest.AnthropicBeta = betaJson
 		}
 	}
-	logger.LogJson(context.Background(), "json", awsClaudeRequest)
+	logger.LogDebug(context.Background(), common.RedactedBodyLog("AWS Claude request body", len(common.GetJsonString(awsClaudeRequest))))
 	return &awsClaudeRequest, nil
 }
 

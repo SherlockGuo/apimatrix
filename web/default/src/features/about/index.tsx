@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
-import { Construction } from 'lucide-react'
+import { BookOpen, KeyRound, LockKeyhole, Route, Scale } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Markdown } from '@/components/ui/markdown'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -37,25 +37,98 @@ function isLikelyHtml(value: string) {
   return /<\/?[a-z][\s\S]*>/i.test(value)
 }
 
-function EmptyAboutState() {
+function DefaultAboutContent() {
   const { t } = useTranslation()
   const currentYear = new Date().getFullYear()
+  const advantages = [
+    {
+      icon: LockKeyhole,
+      title: t('Encrypted transport'),
+      desc: t(
+        'Requests are forwarded over protected channels and request content is not recorded by this gateway.'
+      ),
+    },
+    {
+      icon: Scale,
+      title: t('Compliance first'),
+      desc: t(
+        'Operational controls focus on access, quota, billing metadata and auditability.'
+      ),
+    },
+    {
+      icon: Route,
+      title: t('Unified text routing'),
+      desc: t(
+        'One local API key reaches OpenAI-compatible chat, Claude Messages and Gemini native text APIs.'
+      ),
+    },
+    {
+      icon: KeyRound,
+      title: t('Local key management'),
+      desc: t(
+        'Users manage local API keys, balance and usage metadata without exposing the upstream provider key.'
+      ),
+    },
+  ]
 
   return (
-    <div className='flex min-h-[60vh] items-center justify-center p-8'>
-      <div className='max-w-2xl space-y-6 text-center'>
-        <div className='flex justify-center'>
-          <Construction className='text-muted-foreground h-24 w-24' />
+    <div className='mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 sm:py-16'>
+      <section className='space-y-5'>
+        <div className='border-primary/20 bg-primary/5 text-primary inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium'>
+          <BookOpen className='size-3.5' aria-hidden='true' />
+          {t('About this API service')}
         </div>
-        <div className='space-y-2'>
-          <h2 className='text-2xl font-bold'>{t('No About Content Set')}</h2>
-          <p className='text-muted-foreground'>
+        <div className='max-w-3xl space-y-3'>
+          <h1 className='text-4xl font-semibold tracking-normal sm:text-5xl'>
+            {t('Secure unified model API access')}
+          </h1>
+          <p className='text-muted-foreground text-base leading-7'>
             {t(
-              'The administrator has not configured any about content yet. You can set it in the settings page, supporting HTML or URL.'
+              'A focused API gateway for teams that need stable access to text models through one local key, clear usage accounting, and a no request-content logging policy.'
             )}
           </p>
         </div>
-        <div className='space-y-4 text-sm'>
+      </section>
+
+      <section className='grid gap-3 md:grid-cols-2'>
+        {advantages.map((item) => {
+          const Icon = item.icon
+
+          return (
+            <div key={item.title} className='bg-card rounded-lg border p-5'>
+              <Icon className='text-primary mb-4 size-5' aria-hidden='true' />
+              <h2 className='text-base font-semibold'>{item.title}</h2>
+              <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                {item.desc}
+              </p>
+            </div>
+          )
+        })}
+      </section>
+
+      <section className='bg-card rounded-lg border p-5'>
+        <h2 className='text-lg font-semibold'>{t('Service scope')}</h2>
+        <div className='text-muted-foreground mt-3 grid gap-3 text-sm leading-6 md:grid-cols-3'>
+          <p>
+            {t(
+              'Text chat and reasoning models are available first, with OpenAI-compatible, Claude-compatible and Gemini-compatible routes.'
+            )}
+          </p>
+          <p>
+            {t(
+              'Image, video and TTS capability pages are intentionally hidden until those integrations are enabled.'
+            )}
+          </p>
+          <p>
+            {t(
+              'Billing and monitoring retain only operational metadata such as model, token usage, status and timing.'
+            )}
+          </p>
+        </div>
+      </section>
+
+      <section className='text-muted-foreground space-y-4 border-t pt-6 text-sm'>
+        <div className='space-y-3'>
           <p>
             {t('New API Project Repository:')}{' '}
             <a
@@ -117,7 +190,7 @@ function EmptyAboutState() {
             .
           </p>
         </div>
-      </div>
+      </section>
     </div>
   )
 }
@@ -150,7 +223,7 @@ export function About() {
   if (!hasContent) {
     return (
       <PublicLayout>
-        <EmptyAboutState />
+        <DefaultAboutContent />
       </PublicLayout>
     )
   }

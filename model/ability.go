@@ -143,6 +143,62 @@ func GetChannel(group string, model string, retry int) (*Channel, error) {
 	return &channel, err
 }
 
+func GetChannelByType(group string, model string, channelType int, retry int) (*Channel, error) {
+	var priorities []int64
+	abilityGroupCol := "abilities." + commonGroupCol
+	err := DB.Table("abilities").
+		Select("DISTINCT(abilities.priority)").
+		Joins("JOIN channels ON channels.id = abilities.channel_id").
+		Where(abilityGroupCol+" = ? AND abilities.model = ? AND abilities.enabled = ? AND channels.type = ?", group, model, true, channelType).
+		Order("abilities.priority DESC").
+		Pluck("abilities.priority", &priorities).Error
+	if err != nil {
+		return nil, err
+	}
+	if len(priorities) == 0 {
+		return nil, nil
+	}
+
+	if retry >= len(priorities) {
+		retry = len(priorities) - 1
+	}
+	targetPriority := priorities[retry]
+
+	var abilities []Ability
+	err = DB.Table("abilities").
+		Select("abilities.*").
+		Joins("JOIN channels ON channels.id = abilities.channel_id").
+		Where(abilityGroupCol+" = ? AND abilities.model = ? AND abilities.enabled = ? AND abilities.priority = ? AND channels.type = ?", group, model, true, targetPriority, channelType).
+		Order("abilities.weight DESC").
+		Find(&abilities).Error
+	if err != nil {
+		return nil, err
+	}
+	if len(abilities) == 0 {
+		return nil, nil
+	}
+
+	weightSum := uint(0)
+	for _, ability := range abilities {
+		weightSum += ability.Weight + 10
+	}
+
+	weight := common.GetRandomInt(int(weightSum))
+	channel := Channel{}
+	for _, ability := range abilities {
+		weight -= int(ability.Weight) + 10
+		if weight <= 0 {
+			channel.Id = ability.ChannelId
+			break
+		}
+	}
+	if channel.Id == 0 {
+		return nil, nil
+	}
+	err = DB.First(&channel, "id = ?", channel.Id).Error
+	return &channel, err
+}
+
 func (channel *Channel) AddAbilities(tx *gorm.DB) error {
 	models_ := strings.Split(channel.Models, ",")
 	groups_ := strings.Split(channel.Group, ",")

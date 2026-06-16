@@ -21,7 +21,6 @@ import * as z from 'zod'
 import type { Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Form,
   FormControl,
@@ -65,12 +64,10 @@ type QuotaFormValues = z.infer<typeof quotaSchema>
 
 type QuotaSettingsSectionProps = {
   defaultValues: QuotaFormValues
-  complianceConfirmed?: boolean
 }
 
 export function QuotaSettingsSection({
   defaultValues,
-  complianceConfirmed = true,
 }: QuotaSettingsSectionProps) {
   const { t } = useTranslation()
   const updateOption = useUpdateOption()
@@ -103,16 +100,6 @@ export function QuotaSettingsSection({
   return (
     <SettingsSection title={t('Quota Settings')}>
       <FormNavigationGuard when={isDirty} />
-
-      {!complianceConfirmed ? (
-        <Alert variant='destructive'>
-          <AlertDescription>
-            {t(
-              'Non-zero invitation rewards require compliance confirmation in Payment Gateway settings.'
-            )}
-          </AlertDescription>
-        </Alert>
-      ) : null}
 
       <Form {...form}>
         <SettingsForm onSubmit={handleSubmit}>
@@ -164,54 +151,6 @@ export function QuotaSettingsSection({
                   </FormControl>
                   <FormDescription>
                     {t('Quota consumed before charging users')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='QuotaForInviter'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('Inviter Reward')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      value={field.value ?? ''}
-                      onChange={handleNumberChange(field.onChange)}
-                      name={field.name}
-                      onBlur={field.onBlur}
-                      ref={field.ref}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t('Quota given to users who invite others')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='QuotaForInvitee'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('Invitee Reward')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      value={field.value ?? ''}
-                      onChange={handleNumberChange(field.onChange)}
-                      name={field.name}
-                      onBlur={field.onBlur}
-                      ref={field.ref}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t('Quota given to invited users')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

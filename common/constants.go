@@ -22,7 +22,7 @@ var TopUpLink = ""
 var themeValue atomic.Value // stores string; safe for concurrent read/write
 
 func init() {
-	themeValue.Store("classic")
+	themeValue.Store("default")
 }
 
 func GetTheme() string {
@@ -63,8 +63,8 @@ var QuotaPerUnit = 500 * 1000.0 // $0.002 / 1K tokens
 // 保留旧变量以兼容历史逻辑，实际展示由 general_setting.quota_display_type 控制
 var DisplayInCurrencyEnabled = true
 var DisplayTokenStatEnabled = true
-var DrawingEnabled = true
-var TaskEnabled = true
+var DrawingEnabled = false
+var TaskEnabled = false
 var DataExportEnabled = true
 var DataExportInterval = 5         // unit: minute
 var DataExportDefaultTime = "hour" // unit: minute

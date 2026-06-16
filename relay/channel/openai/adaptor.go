@@ -389,7 +389,7 @@ func (a *Adaptor) ConvertAudioRequest(c *gin.Context, info *relaycommon.RelayInf
 			}
 			for _, value := range values {
 				writer.WriteField(key, value)
-				logger.LogDebug(c.Request.Context(), "--form '%s=\"%s\"'", key, value)
+				logger.LogDebug(c.Request.Context(), "--form '%s=\"%s\"' (value omitted for privacy, bytes=%d)", key, common.RedactedLogContent, len(value))
 			}
 		}
 
@@ -401,8 +401,8 @@ func (a *Adaptor) ConvertAudioRequest(c *gin.Context, info *relaycommon.RelayInf
 
 		// 使用 formData 中的第一个文件
 		fileHeader := fileHeaders[0]
-		logger.LogDebug(c.Request.Context(), "--form 'file=@\"%s\"' (size: %d bytes, content-type: %s)",
-			fileHeader.Filename, fileHeader.Size, fileHeader.Header.Get("Content-Type"))
+		logger.LogDebug(c.Request.Context(), "--form 'file=@\"%s\"' (filename omitted for privacy, size: %d bytes, content-type: %s)",
+			common.RedactedLogContent, fileHeader.Size, fileHeader.Header.Get("Content-Type"))
 
 		file, err := fileHeader.Open()
 		if err != nil {

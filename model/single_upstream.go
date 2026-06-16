@@ -38,6 +38,14 @@ func singleUpstreamModelsString() string {
 	return strings.Join(constant.SingleUpstreamTextModels, ",")
 }
 
+func singleUpstreamAnthropicModelsString() string {
+	return strings.Join(constant.SingleUpstreamAnthropicModels, ",")
+}
+
+func singleUpstreamGeminiModelsString() string {
+	return strings.Join(constant.SingleUpstreamGeminiModels, ",")
+}
+
 func EnsureSingleUpstreamChannelFromEnv() error {
 	key := getSingleUpstreamAPIKeyFromEnv()
 	if key == "" {
@@ -47,13 +55,24 @@ func EnsureSingleUpstreamChannelFromEnv() error {
 	name := getSingleUpstreamEnvOrDefault(singleUpstreamChannelNameEnv, constant.SingleUpstreamChannelName)
 	baseURL := getSingleUpstreamEnvOrDefault(singleUpstreamBaseURLEnv, constant.SingleUpstreamBaseURL)
 	group := getSingleUpstreamEnvOrDefault(singleUpstreamGroupEnv, "default")
-	models := singleUpstreamModelsString()
+	if err := ensureSingleUpstreamChannelFromEnv(name, constant.ChannelTypeOpenAI, key, baseURL, group, singleUpstreamModelsString(), 10); err != nil {
+		return err
+	}
+	if err := ensureSingleUpstreamChannelFromEnv(name+" - Anthropic", constant.ChannelTypeAnthropic, key, baseURL, group, singleUpstreamAnthropicModelsString(), 0); err != nil {
+		return err
+	}
+	if err := ensureSingleUpstreamChannelFromEnv(name+" - Gemini", constant.ChannelTypeGemini, key, baseURL, group, singleUpstreamGeminiModelsString(), 0); err != nil {
+		return err
+	}
+	return nil
+}
 
+func ensureSingleUpstreamChannelFromEnv(name string, channelType int, key string, baseURL string, group string, models string, priority int64) error {
 	var channel Channel
-	err := DB.Where("name = ? AND type = ?", name, constant.ChannelTypeOpenAI).First(&channel).Error
+	err := DB.Where("name = ? AND type = ?", name, channelType).First(&channel).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		channel = Channel{
-			Type:        constant.ChannelTypeOpenAI,
+			Type:        channelType,
 			Key:         key,
 			Status:      common.ChannelStatusEnabled,
 			Name:        name,
@@ -61,6 +80,7 @@ func EnsureSingleUpstreamChannelFromEnv() error {
 			BaseURL:     &baseURL,
 			Models:      models,
 			Group:       group,
+			Priority:    &priority,
 		}
 		if err := channel.Insert(); err != nil {
 			return err
@@ -77,6 +97,7 @@ func EnsureSingleUpstreamChannelFromEnv() error {
 	channel.BaseURL = &baseURL
 	channel.Models = models
 	channel.Group = group
+	channel.Priority = &priority
 	if err := channel.Update(); err != nil {
 		return err
 	}

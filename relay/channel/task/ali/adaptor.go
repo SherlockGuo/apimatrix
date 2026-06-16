@@ -148,7 +148,7 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	if err != nil {
 		return nil, errors.Wrap(err, "convert_to_ali_request_failed")
 	}
-	logger.LogJson(c, "ali video request body", aliReq)
+	logger.LogDebug(c, common.RedactedBodyLog("ali video request body", len(common.GetJsonString(aliReq))))
 
 	bodyBytes, err := common.Marshal(aliReq)
 	if err != nil {
@@ -386,7 +386,7 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 	// 解析阿里响应
 	var aliResp AliVideoResponse
 	if err := common.Unmarshal(responseBody, &aliResp); err != nil {
-		taskErr = service.TaskErrorWrapper(errors.Wrapf(err, "body: %s", responseBody), "unmarshal_response_body_failed", http.StatusInternalServerError)
+		taskErr = service.TaskErrorWrapper(errors.Wrap(err, common.RedactedBodyLog("response body", len(responseBody))), "unmarshal_response_body_failed", http.StatusInternalServerError)
 		return
 	}
 

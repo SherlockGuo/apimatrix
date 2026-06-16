@@ -167,7 +167,7 @@ func RefundTaskQuota(ctx context.Context, task *model.Task, reason string) {
 	// 3. 记录日志
 	other := taskBillingOther(task)
 	other["task_id"] = task.TaskID
-	other["reason"] = reason
+	other["reason"] = common.RedactLogContent(reason)
 	model.RecordTaskBillingLog(model.RecordTaskBillingLogParams{
 		UserId:    task.UserId,
 		LogType:   model.LogTypeRefund,

@@ -26,24 +26,24 @@ export function HowItWorks() {
   const steps = [
     {
       num: '1',
-      title: t('Configure'),
+      title: t('Create a local key'),
       desc: t(
-        'Add your API keys, set up channels and configure access permissions'
+        'Use a platform-issued key for client requests while the upstream token stays server-side.'
       ),
       icon: <Settings className='size-6' strokeWidth={1.5} />,
     },
     {
       num: '2',
-      title: t('Connect'),
+      title: t('Choose a protocol'),
       desc: t(
-        'Connect through OpenAI, Claude, Gemini, and other compatible API routes'
+        'Use OpenAI-compatible, Claude Messages, Gemini text or NewAPI-compatible endpoints.'
       ),
       icon: <Zap className='size-6' strokeWidth={1.5} />,
     },
     {
       num: '3',
-      title: t('Monitor'),
-      desc: t('Track usage, costs and performance with real-time analytics'),
+      title: t('Monitor metadata'),
+      desc: t('Review usage, quota and status without storing request content.'),
       icon: <BarChart3 className='size-6' strokeWidth={1.5} />,
     },
   ]
@@ -53,10 +53,10 @@ export function HowItWorks() {
       <div className='mx-auto max-w-6xl'>
         <AnimateInView className='mb-16 text-center md:mb-20'>
           <p className='text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase'>
-            {t('How It Works')}
+            {t('Connection Flow')}
           </p>
           <h2 className='text-2xl font-bold tracking-tight md:text-3xl'>
-            {t('Three steps to get started')}
+            {t('Three steps to send your first text request')}
           </h2>
         </AnimateInView>
 

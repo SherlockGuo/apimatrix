@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
@@ -206,6 +207,7 @@ func TestGetPreferredChannelByAffinity_RequestHeaderKeySource(t *testing.T) {
 
 	affinityValue := fmt.Sprintf("header-hit-%d", time.Now().UnixNano())
 	cacheKeySuffix := buildChannelAffinityCacheKeySuffix(rule, "gpt-5", "default", affinityValue)
+	require.NotContains(t, cacheKeySuffix, affinityValue)
 
 	cache := getChannelAffinityCache()
 	require.NoError(t, cache.SetWithTTL(cacheKeySuffix, 9528, time.Minute))
@@ -233,7 +235,8 @@ func TestGetPreferredChannelByAffinity_RequestHeaderKeySource(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, "request_header", meta.KeySourceType)
 	require.Equal(t, "X-Affinity-Key", meta.KeySourceKey)
-	require.Equal(t, buildChannelAffinityKeyHint(affinityValue), meta.KeyHint)
+	require.Equal(t, common.RedactedLogContent, meta.KeyHint)
+	require.NotContains(t, meta.CacheKey, affinityValue)
 }
 
 func TestClearCurrentChannelAffinityCache(t *testing.T) {
@@ -281,6 +284,7 @@ func TestChannelAffinityHitCodexTemplatePassHeadersEffective(t *testing.T) {
 
 	affinityValue := fmt.Sprintf("pc-hit-%d", time.Now().UnixNano())
 	cacheKeySuffix := buildChannelAffinityCacheKeySuffix(*codexRule, "gpt-5", "default", affinityValue)
+	require.NotContains(t, cacheKeySuffix, affinityValue)
 
 	cache := getChannelAffinityCache()
 	require.NoError(t, cache.SetWithTTL(cacheKeySuffix, 9527, time.Minute))

@@ -68,6 +68,17 @@ func cacheWriteTokensTotal(summary textQuotaSummary) int {
 	return summary.CacheCreationTokens
 }
 
+func logPromptTokensForTextConsume(summary textQuotaSummary) int {
+	if summary.IsClaudeUsageSemantic || !strings.HasPrefix(summary.ModelName, "claude-") {
+		return summary.PromptTokens
+	}
+	cacheInputTokens := summary.CacheTokens + cacheWriteTokensTotal(summary)
+	if cacheInputTokens <= 0 || summary.PromptTokens < cacheInputTokens {
+		return summary.PromptTokens
+	}
+	return summary.PromptTokens - cacheInputTokens
+}
+
 func isLegacyClaudeDerivedOpenAIUsage(relayInfo *relaycommon.RelayInfo, usage *dto.Usage) bool {
 	if relayInfo == nil || usage == nil {
 		return false
@@ -461,7 +472,7 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,
-		PromptTokens:     summary.PromptTokens,
+		PromptTokens:     logPromptTokensForTextConsume(summary),
 		CompletionTokens: summary.CompletionTokens,
 		ModelName:        logModel,
 		TokenName:        summary.TokenName,

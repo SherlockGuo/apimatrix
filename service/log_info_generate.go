@@ -103,15 +103,11 @@ func appendStreamStatus(relayInfo *relaycommon.RelayInfo, other map[string]inter
 		"end_reason": string(ss.EndReason),
 	}
 	if ss.EndError != nil {
-		streamInfo["end_error"] = ss.EndError.Error()
+		streamInfo["end_error"] = common.RedactedLogContent
 	}
 	if ss.ErrorCount > 0 {
 		streamInfo["error_count"] = ss.ErrorCount
-		messages := make([]string, 0, len(ss.Errors))
-		for _, e := range ss.Errors {
-			messages = append(messages, e.Message)
-		}
-		streamInfo["errors"] = messages
+		streamInfo["errors_redacted"] = true
 	}
 	other["stream_status"] = streamInfo
 }

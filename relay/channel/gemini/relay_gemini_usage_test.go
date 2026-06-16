@@ -282,6 +282,62 @@ func TestGeminiStreamHandlerUsesEstimatedPromptTokensWhenUsagePromptMissing(t *t
 	require.Equal(t, 110, usage.TotalTokens)
 }
 
+func TestGeminiStreamHandlerUsesUsageMetadataWhenTotalTokenCountMissing(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+
+	oldStreamingTimeout := constant.StreamingTimeout
+	constant.StreamingTimeout = 300
+	t.Cleanup(func() {
+		constant.StreamingTimeout = oldStreamingTimeout
+	})
+
+	info := &relaycommon.RelayInfo{
+		OriginModelName: "gemini-3-flash-preview",
+		ChannelMeta: &relaycommon.ChannelMeta{
+			UpstreamModelName: "gemini-3-flash-preview",
+		},
+	}
+
+	chunk := dto.GeminiChatResponse{
+		Candidates: []dto.GeminiChatCandidate{
+			{
+				Content: dto.GeminiChatContent{
+					Role: "model",
+					Parts: []dto.GeminiPart{
+						{Text: "partial"},
+					},
+				},
+			},
+		},
+		UsageMetadata: dto.GeminiUsageMetadata{
+			PromptTokenCount:     15,
+			CandidatesTokenCount: 9,
+			ThoughtsTokenCount:   3,
+			TotalTokenCount:      0,
+		},
+	}
+
+	chunkData, err := common.Marshal(chunk)
+	require.NoError(t, err)
+
+	streamBody := []byte("data: " + string(chunkData) + "\n" + "data: [DONE]\n")
+	resp := &http.Response{
+		Body: io.NopCloser(bytes.NewReader(streamBody)),
+	}
+
+	usage, newAPIError := geminiStreamHandler(c, info, resp, func(_ string, _ *dto.GeminiChatResponse) bool {
+		return true
+	})
+	require.Nil(t, newAPIError)
+	require.NotNil(t, usage)
+	require.Equal(t, 15, usage.PromptTokens)
+	require.Equal(t, 12, usage.CompletionTokens)
+	require.Equal(t, 27, usage.TotalTokens)
+	require.Equal(t, 3, usage.CompletionTokenDetails.ReasoningTokens)
+}
+
 func TestGeminiTextGenerationHandlerUsesEstimatedPromptTokensWhenUsagePromptMissing(t *testing.T) {
 	t.Parallel()
 
@@ -330,4 +386,47 @@ func TestGeminiTextGenerationHandlerUsesEstimatedPromptTokensWhenUsagePromptMiss
 	require.Equal(t, 20, usage.PromptTokens)
 	require.Equal(t, 100, usage.CompletionTokens)
 	require.Equal(t, 110, usage.TotalTokens)
+}
+
+func TestGeminiTextGenerationHandlerFallsBackToTextUsageWhenUsageMetadataMissing(t *testing.T) {
+	t.Parallel()
+
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1beta/models/gemini-3-flash-preview:generateContent", nil)
+
+	info := &relaycommon.RelayInfo{
+		OriginModelName: "gemini-3-flash-preview",
+		ChannelMeta: &relaycommon.ChannelMeta{
+			UpstreamModelName: "gemini-3-flash-preview",
+		},
+	}
+	info.SetEstimatePromptTokens(11)
+
+	payload := dto.GeminiChatResponse{
+		Candidates: []dto.GeminiChatCandidate{
+			{
+				Content: dto.GeminiChatContent{
+					Role: "model",
+					Parts: []dto.GeminiPart{
+						{Text: "hello from upstream"},
+					},
+				},
+			},
+		},
+	}
+
+	body, err := common.Marshal(payload)
+	require.NoError(t, err)
+
+	resp := &http.Response{
+		Body: io.NopCloser(bytes.NewReader(body)),
+	}
+
+	usage, newAPIError := GeminiTextGenerationHandler(c, info, resp)
+	require.Nil(t, newAPIError)
+	require.NotNil(t, usage)
+	require.Equal(t, 11, usage.PromptTokens)
+	require.Greater(t, usage.CompletionTokens, 0)
+	require.Equal(t, usage.PromptTokens+usage.CompletionTokens, usage.TotalTokens)
 }

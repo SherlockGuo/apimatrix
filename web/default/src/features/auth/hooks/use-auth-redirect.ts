@@ -54,27 +54,24 @@ export function useAuthRedirect() {
    * @param redirectTo - Redirect path after login
    */
   const handleLoginSuccess = async (
-    userData?: { id?: number } | null,
+    userData?: ({ id?: number } & Partial<User>) | null,
     redirectTo?: string
   ) => {
-    // Save user ID if available
     if (userData?.id) {
       saveUserId(userData.id)
+      auth.setUser(userData as User)
     }
 
-    // Fetch and set user data
     try {
       const self = await getSelf()
       if (self?.success && self.data) {
         const user = self.data as User
         auth.setUser(user)
 
-        // Update user ID if not already set
         if (user.id) {
           saveUserId(user.id)
         }
 
-        // Restore saved language preference
         const savedLang = getSavedLanguage(user)
         if (savedLang && savedLang !== i18n.language) {
           i18n.changeLanguage(savedLang)
@@ -85,7 +82,11 @@ export function useAuthRedirect() {
       console.error('Failed to fetch user data:', error)
     }
 
-    // Navigate to target page
+    if (!useAuthStore.getState().auth.user) {
+      auth.reset()
+      return
+    }
+
     const targetPath = redirectTo || '/dashboard'
     navigate({ to: targetPath, replace: true })
   }

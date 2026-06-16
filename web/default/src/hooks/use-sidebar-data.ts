@@ -18,14 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import {
   Activity,
+  BarChart3,
   Box,
   CreditCard,
   FileText,
-  FlaskConical,
   Key,
   LayoutDashboard,
-  ListTodo,
-  MessageSquare,
   Radio,
   Settings,
   Ticket,
@@ -48,22 +46,6 @@ export function useSidebarData(): SidebarData {
   return {
     navGroups: [
       {
-        id: 'chat',
-        title: t('Chat'),
-        items: [
-          {
-            title: t('Playground'),
-            url: '/playground',
-            icon: FlaskConical,
-          },
-          {
-            title: t('Chat'),
-            icon: MessageSquare,
-            type: 'chat-presets',
-          },
-        ],
-      },
-      {
         id: 'general',
         title: t('General'),
         items: [
@@ -73,7 +55,7 @@ export function useSidebarData(): SidebarData {
             icon: Activity,
           },
           {
-            title: t('Dashboard'),
+            title: t('Data Dashboard'),
             url: '/dashboard/models',
             icon: LayoutDashboard,
           },
@@ -88,11 +70,9 @@ export function useSidebarData(): SidebarData {
             icon: FileText,
           },
           {
-            title: t('Task Logs'),
-            url: '/usage-logs/task',
-            activeUrls: ['/usage-logs/drawing'],
-            configUrls: ['/usage-logs/drawing', '/usage-logs/task'],
-            icon: ListTodo,
+            title: t('Usage Statistics'),
+            url: '/usage-logs/statistics',
+            icon: BarChart3,
           },
         ],
       },

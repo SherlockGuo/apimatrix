@@ -28,6 +28,8 @@ import {
   Circle,
   Copy,
   CreditCard,
+  DatabaseZap,
+  ExternalLink,
   FileText,
   KeyRound,
   ListChecks,
@@ -83,6 +85,7 @@ const SETUP_GUIDE_CODE_PATTERN = [
 type DashboardActionPath =
   | '/keys'
   | '/wallet'
+  | '/docs'
   | '/playground'
   | '/channels'
   | '/usage-logs'
@@ -116,6 +119,18 @@ interface RequestExample {
 interface HeroSignal {
   label: string
   value: string
+  icon: LucideIcon
+}
+
+interface AccessProtocol {
+  name: string
+  endpoint: string
+  description: string
+}
+
+interface OperationsTile {
+  title: string
+  description: string
   icon: LucideIcon
 }
 
@@ -454,6 +469,178 @@ function CompactQuickAction(props: { action: QuickAction }) {
   )
 }
 
+function AccessInformationPanel(props: {
+  endpoint: string
+  model: string
+}) {
+  const { t } = useTranslation()
+  const origin = getCurrentOrigin()
+  const protocols: AccessProtocol[] = [
+    {
+      name: 'OpenAI',
+      endpoint: props.endpoint,
+      description: t('Chat Completions compatible text interface'),
+    },
+    {
+      name: 'Claude',
+      endpoint: `${origin || ''}/anthropic/messages`,
+      description: t('Messages API compatible text interface'),
+    },
+    {
+      name: 'Gemini',
+      endpoint: `${origin || ''}/gemini/v1/models/${props.model}:generateContent`,
+      description: t('GenerateContent compatible text interface'),
+    },
+    {
+      name: 'NewAPI',
+      endpoint: `${origin || ''}/newapi/v1/chat/completions`,
+      description: t('Native compatibility path for existing clients'),
+    },
+  ]
+
+  return (
+    <CardStaggerItem className='bg-card rounded-2xl border p-4 shadow-xs sm:p-5'>
+      <div className='mb-4 flex flex-wrap items-start justify-between gap-3'>
+        <div className='flex min-w-0 flex-col gap-1'>
+          <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium tracking-wider uppercase'>
+            <RadioTower className='size-3.5' aria-hidden='true' />
+            {t('API access information')}
+          </div>
+          <h3 className='text-lg font-semibold tracking-tight'>
+            {t('One key, four text protocols')}
+          </h3>
+          <p className='text-muted-foreground max-w-2xl text-sm leading-relaxed'>
+            {t(
+              'Use the same API key for OpenAI, Claude, Gemini, and NewAPI-compatible text calls.'
+            )}
+          </p>
+        </div>
+        <Button
+          size='sm'
+          variant='outline'
+          className='shrink-0'
+          render={<Link to='/docs' />}
+        >
+          <BookOpen data-icon='inline-start' />
+          {t('Docs')}
+        </Button>
+      </div>
+
+      <div className='grid gap-2 lg:grid-cols-2'>
+        {protocols.map((protocol) => (
+          <div
+            key={protocol.name}
+            className='bg-muted/35 rounded-xl border px-3 py-2.5'
+          >
+            <div className='mb-1 flex items-center justify-between gap-3'>
+              <span className='text-sm font-medium'>{protocol.name}</span>
+              <span className='text-muted-foreground rounded-md border bg-background px-1.5 py-0.5 text-[11px]'>
+                {t('Text')}
+              </span>
+            </div>
+            <code className='text-muted-foreground block truncate font-mono text-xs'>
+              {protocol.endpoint}
+            </code>
+            <p className='text-muted-foreground mt-1 text-xs leading-relaxed'>
+              {protocol.description}
+            </p>
+          </div>
+        ))}
+      </div>
+    </CardStaggerItem>
+  )
+}
+
+function OperationsNoticePanel() {
+  const { t } = useTranslation()
+  const tiles: OperationsTile[] = [
+    {
+      title: t('Content privacy'),
+      description: t(
+        'Prompt and response bodies are relayed only and are not stored in usage logs.'
+      ),
+      icon: ShieldCheck,
+    },
+    {
+      title: t('Single upstream'),
+      description: t(
+        'All supported text protocols are routed to the configured upstream API key.'
+      ),
+      icon: DatabaseZap,
+    },
+    {
+      title: t('Text-first scope'),
+      description: t(
+        'Image, video, and TTS entrances stay hidden while this deployment focuses on text models.'
+      ),
+      icon: FileText,
+    },
+  ]
+
+  return (
+    <CardStaggerItem className='bg-card rounded-2xl border p-4 shadow-xs sm:p-5'>
+      <div className='mb-4 flex flex-col gap-1'>
+        <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium tracking-wider uppercase'>
+          <ShieldCheck className='size-3.5' aria-hidden='true' />
+          {t('Operational notes')}
+        </div>
+        <h3 className='text-lg font-semibold tracking-tight'>
+          {t('Designed for secure text access')}
+        </h3>
+      </div>
+
+      <div className='grid gap-2'>
+        {tiles.map((tile) => {
+          const Icon = tile.icon
+
+          return (
+            <div
+              key={tile.title}
+              className='bg-muted/35 flex gap-3 rounded-xl border px-3 py-2.5'
+            >
+              <span className='bg-background flex size-9 shrink-0 items-center justify-center rounded-lg border'>
+                <Icon className='size-4' aria-hidden='true' />
+              </span>
+              <span className='min-w-0'>
+                <span className='block text-sm font-medium'>{tile.title}</span>
+                <span className='text-muted-foreground mt-0.5 block text-xs leading-relaxed'>
+                  {tile.description}
+                </span>
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className='mt-4 grid grid-cols-2 gap-2'>
+        <Button
+          variant='outline'
+          size='sm'
+          className='justify-start'
+          render={
+            <Link
+              to='/usage-logs/$section'
+              params={{ section: 'statistics' }}
+            />
+          }
+        >
+          <Timer data-icon='inline-start' />
+          {t('Usage Statistics')}
+        </Button>
+        <Button
+          variant='outline'
+          size='sm'
+          className='justify-start'
+          render={<Link to='/key' />}
+        >
+          <ExternalLink data-icon='inline-start' />
+          {t('Token Lookup')}
+        </Button>
+      </div>
+    </CardStaggerItem>
+  )
+}
+
 export function OverviewDashboard() {
   const { t } = useTranslation()
   const user = useAuthStore((state) => state.auth.user)
@@ -744,6 +931,14 @@ export function OverviewDashboard() {
       )}
 
       <SummaryCards />
+
+      <CardStaggerContainer className='grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]'>
+        <AccessInformationPanel
+          endpoint={requestExample.endpoint}
+          model={requestExample.model}
+        />
+        <OperationsNoticePanel />
+      </CardStaggerContainer>
 
       {showContentPanels && (
         <CardStaggerContainer

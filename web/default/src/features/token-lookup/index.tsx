@@ -23,6 +23,7 @@ import {
   KeyRound,
   Loader2,
   Search,
+  ShieldCheck,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -99,24 +100,55 @@ export function TokenLookup() {
   return (
     <PublicLayout showMainContainer={false}>
       <main className='bg-muted/30 flex min-h-svh items-center px-4 py-24'>
-        <section className='mx-auto flex w-full max-w-2xl flex-col gap-5'>
-          <div className='space-y-3 text-center'>
+        <section className='mx-auto grid w-full max-w-6xl items-center gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(420px,520px)]'>
+          <div className='space-y-6'>
             <Badge
               variant='outline'
-              className='mx-auto border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300'
+              className='border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300'
             >
               <KeyRound aria-hidden='true' />
               {t('Local API key check')}
             </Badge>
-            <div className='space-y-2'>
-              <h1 className='text-3xl font-semibold tracking-normal sm:text-4xl'>
+            <div className='max-w-2xl space-y-3'>
+              <h1 className='text-4xl leading-tight font-semibold tracking-normal sm:text-5xl'>
                 {t('Token Lookup')}
               </h1>
-              <p className='text-muted-foreground mx-auto max-w-xl text-sm leading-6 sm:text-base'>
+              <p className='text-muted-foreground text-base leading-7 sm:text-lg'>
                 {t(
-                  'Check whether a locally issued API key exists in this service. This does not reveal or validate the upstream provider credential.'
+                  'Check whether a locally issued API key exists in this service and review its remaining quota status.'
                 )}
               </p>
+            </div>
+
+            <div className='grid gap-3 sm:grid-cols-2'>
+              <div className='bg-background/80 rounded-lg border p-4 shadow-sm'>
+                <ShieldCheck
+                  className='mb-3 size-5 text-emerald-600'
+                  aria-hidden='true'
+                />
+                <h2 className='text-sm font-semibold'>
+                  {t('Local lookup only')}
+                </h2>
+                <p className='text-muted-foreground mt-2 text-xs leading-5'>
+                  {t(
+                    'This checks local token records only and never exposes the upstream provider credential.'
+                  )}
+                </p>
+              </div>
+              <div className='bg-background/80 rounded-lg border p-4 shadow-sm'>
+                <CheckCircle2
+                  className='text-primary mb-3 size-5'
+                  aria-hidden='true'
+                />
+                <h2 className='text-sm font-semibold'>
+                  {t('Content-free checks')}
+                </h2>
+                <p className='text-muted-foreground mt-2 text-xs leading-5'>
+                  {t(
+                    'The lookup uses the key value only for matching and does not create request-content logs.'
+                  )}
+                </p>
+              </div>
             </div>
           </div>
 

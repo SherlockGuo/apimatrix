@@ -408,7 +408,6 @@ interface DetailsDialogProps {
 export function DetailsDialog(props: DetailsDialogProps) {
   const { t } = useTranslation()
   const { copiedText, copyToClipboard } = useCopyToClipboard({ notify: false })
-  const details = props.log.content ?? ''
   const other = parseLogOther(props.log.other)
   const typeConfig = getLogTypeConfig(props.log.type)
 
@@ -547,7 +546,7 @@ export function DetailsDialog(props: DetailsDialogProps) {
           />
         </>
       }
-      description={t('View the complete details for this log entry')}
+      description={t('View metadata for this log entry')}
       contentClassName={cn(
         'min-w-0 overflow-hidden',
         'max-sm:max-h-[calc(100dvh-1.5rem)] max-sm:w-[calc(100vw-1.5rem)] max-sm:max-w-[calc(100vw-1.5rem)] max-sm:p-4',
@@ -1123,30 +1122,26 @@ export function DetailsDialog(props: DetailsDialogProps) {
             </DetailSection>
           )}
 
-          {/* Content */}
-          {details && (
-            <div className='space-y-1.5'>
-              <Label className='text-xs font-semibold'>{t('Content')}</Label>
-              <div className='bg-muted/30 relative min-w-0 overflow-hidden rounded-md border p-2.5'>
-                <Button
-                  variant='ghost'
+          {/* Request content policy */}
+          {isDisplayableType(props.log.type) && (
+            <DetailSection
+              icon={<ShieldCheck className='size-3.5' aria-hidden='true' />}
+              label={t('Request content policy')}
+            >
+              <p className='text-xs leading-relaxed'>
+                {t(
+                  'Request and response content are not stored. This log keeps operational metadata only.'
+                )}
+              </p>
+              <div className='mt-2 min-w-0'>
+                <StatusBadge
+                  label={t('Content omitted for privacy')}
+                  variant='green'
                   size='sm'
-                  className='absolute top-1.5 right-1.5 h-5 w-5 p-0'
-                  onClick={() => copyToClipboard(details)}
-                  title={t('Copy to clipboard')}
-                  aria-label={t('Copy to clipboard')}
-                >
-                  {copiedText === details ? (
-                    <Check className='size-3 text-green-600' />
-                  ) : (
-                    <Copy className='size-3' />
-                  )}
-                </Button>
-                <p className='min-w-0 pr-6 text-xs leading-relaxed break-all whitespace-pre-wrap sm:break-words'>
-                  {details}
-                </p>
+                  copyable={false}
+                />
               </div>
-            </div>
+            </DetailSection>
           )}
         </div>
       </ScrollArea>

@@ -48,6 +48,7 @@ import {
   isViolationFeeLog,
   renderAuditContent,
 } from '../../lib/format'
+import { isRedactedLogContent } from '../../lib/privacy'
 import {
   isDisplayableLogType,
   isTimingLogType,
@@ -787,7 +788,10 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
                 </span>
               ) : log.content ? (
                 <span className='text-muted-foreground truncate group-hover:underline'>
-                  {log.content}
+                  {isDisplayableLogType(log.type) ||
+                  isRedactedLogContent(log.content)
+                    ? t('Content omitted for privacy')
+                    : log.content}
                 </span>
               ) : (
                 <span className='text-muted-foreground/40'>—</span>

@@ -89,22 +89,6 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         itemKey: 'log',
         to: '/log',
       },
-      {
-        text: t('绘图日志'),
-        itemKey: 'midjourney',
-        to: '/midjourney',
-        className:
-          localStorage.getItem('enable_drawing') === 'true'
-            ? ''
-            : 'tableHiddle',
-      },
-      {
-        text: t('任务日志'),
-        itemKey: 'task',
-        to: '/task',
-        className:
-          localStorage.getItem('enable_task') === 'true' ? '' : 'tableHiddle',
-      },
     ];
 
     // 根据配置过滤项目

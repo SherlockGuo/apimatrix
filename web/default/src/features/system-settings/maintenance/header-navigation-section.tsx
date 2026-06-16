@@ -53,6 +53,7 @@ const headerNavSchema = z.object({
   pricingRequireAuth: z.boolean(),
   rankingsEnabled: z.boolean(),
   rankingsRequireAuth: z.boolean(),
+  key: z.boolean(),
   docs: z.boolean(),
   about: z.boolean(),
 })
@@ -87,6 +88,7 @@ const toFormValues = (config: HeaderNavModulesConfig): HeaderNavFormValues => ({
     config.rankings?.requireAuth === undefined
       ? HEADER_NAV_DEFAULT.rankings.requireAuth
       : Boolean(config.rankings.requireAuth),
+  key: config.key === undefined ? HEADER_NAV_DEFAULT.key : Boolean(config.key),
   docs:
     config.docs === undefined ? HEADER_NAV_DEFAULT.docs : Boolean(config.docs),
   about:
@@ -129,6 +131,7 @@ export function HeaderNavigationSection({
         enabled: values.rankingsEnabled,
         requireAuth: values.rankingsRequireAuth,
       },
+      key: values.key,
     }
 
     const serialized = serializeHeaderNavModules(payload)
@@ -167,6 +170,11 @@ export function HeaderNavigationSection({
       description: t('Documentation or external knowledge base.'),
     },
     {
+      key: 'key',
+      title: t('Token Lookup'),
+      description: t('Public page for checking API token balance and usage.'),
+    },
+    {
       key: 'about',
       title: t('About'),
       description: t('Static page describing the platform.'),
@@ -191,17 +199,6 @@ export function HeaderNavigationSection({
       requireAuthTitle: t('Require login to view models'),
       requireAuthDescription: t(
         'Visitors must authenticate before accessing the pricing directory.'
-      ),
-    },
-    {
-      enabledKey: 'rankingsEnabled',
-      requireAuthKey: 'rankingsRequireAuth',
-      requireAuthDependsOn: 'rankingsEnabled',
-      title: t('Rankings'),
-      description: t('Public rankings page based on live usage data.'),
-      requireAuthTitle: t('Require login to view rankings'),
-      requireAuthDescription: t(
-        'Visitors must authenticate before accessing the rankings page.'
       ),
     },
   ]

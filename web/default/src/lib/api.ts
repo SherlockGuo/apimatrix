@@ -181,6 +181,8 @@ export async function getSelf() {
   const res = await api.get('/api/user/self', {
     // Avoid global 401 toast during guards/preloads
     skipErrorHandler: true,
+    // Auth flows must not reuse a stale in-flight request from before login
+    disableDuplicate: true,
   })
   return res.data
 }

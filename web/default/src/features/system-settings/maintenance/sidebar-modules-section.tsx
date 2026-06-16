@@ -136,7 +136,7 @@ export function SidebarModulesSection({
       },
       redemption: {
         title: t('Redeem codes'),
-        description: t('Create and review invite or credit codes.'),
+        description: t('Create and review credit codes.'),
       },
       user: {
         title: t('Users'),

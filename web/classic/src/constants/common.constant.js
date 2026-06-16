@@ -27,16 +27,10 @@ export const API_ENDPOINTS = [
   '/v1/chat/completions',
   '/v1/responses',
   '/v1/responses/compact',
-  '/v1/messages',
+  '/anthropic/messages',
   '/v1beta/models',
-  '/v1/embeddings',
-  '/v1/rerank',
-  '/v1/images/generations',
-  '/v1/images/edits',
-  '/v1/images/variations',
-  '/v1/audio/speech',
-  '/v1/audio/transcriptions',
-  '/v1/audio/translations',
+  '/gemini/v1/models/{model}:generateContent',
+  '/newapi/v1/chat/completions',
 ];
 
 export const TASK_ACTION_GENERATE = 'generate';

@@ -172,6 +172,20 @@ func TestCacheWriteTokensTotal(t *testing.T) {
 	})
 }
 
+func TestLogPromptTokensForTextConsumeSeparatesClaudeOpenAICompatibleCache(t *testing.T) {
+	summary := textQuotaSummary{
+		ModelName:                "claude-opus-4-8",
+		PromptTokens:             1222,
+		CompletionTokens:         4,
+		CacheTokens:              1216,
+		CacheCreationTokens:      4,
+		CacheCreationTokens5m:    4,
+		IsClaudeUsageSemantic:    false,
+	}
+
+	require.Equal(t, 2, logPromptTokensForTextConsume(summary))
+}
+
 func TestCalculateTextQuotaSummaryHandlesLegacyClaudeDerivedOpenAIUsage(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()

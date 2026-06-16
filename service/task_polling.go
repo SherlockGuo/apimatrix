@@ -212,11 +212,11 @@ func updateSunoTasks(ctx context.Context, channelId int, taskIds []string, taskM
 	var responseItems dto.TaskResponse[[]dto.SunoDataResponse]
 	err = common.Unmarshal(responseBody, &responseItems)
 	if err != nil {
-		logger.LogError(ctx, fmt.Sprintf("Get Suno Task parse body error2: %v, body: %s", err, string(responseBody)))
+		logger.LogError(ctx, fmt.Sprintf("Get Suno Task parse body error2: %v, %s", err, common.RedactedBodyLog("response body", len(responseBody))))
 		return err
 	}
 	if !responseItems.IsSuccess() {
-		common.SysLog(fmt.Sprintf("渠道 #%d 未完成的任务有: %d, 成功获取到任务数: %s", channelId, len(taskIds), string(responseBody)))
+		common.SysLog(fmt.Sprintf("渠道 #%d 未完成的任务有: %d, 成功获取到任务响应已省略: %s", channelId, len(taskIds), common.RedactedBodyLog("response body", len(responseBody))))
 		return err
 	}
 
@@ -232,7 +232,8 @@ func updateSunoTasks(ctx context.Context, channelId int, taskIds []string, taskM
 		task.StartTime = lo.If(responseItem.StartTime != 0, responseItem.StartTime).Else(task.StartTime)
 		task.FinishTime = lo.If(responseItem.FinishTime != 0, responseItem.FinishTime).Else(task.FinishTime)
 		if responseItem.FailReason != "" || task.Status == model.TaskStatusFailure {
-			logger.LogInfo(ctx, task.TaskID+" 构建失败，"+task.FailReason)
+			task.FailReason = common.RedactLogContent(task.FailReason)
+			logger.LogInfo(ctx, fmt.Sprintf("%s 构建失败，reason_redacted=%t", task.TaskID, task.FailReason != ""))
 			task.Progress = "100%"
 			RefundTaskQuota(ctx, task, task.FailReason)
 		}
@@ -372,7 +373,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 		return fmt.Errorf("readAll failed for task %s: %w", taskId, err)
 	}
 
-	logger.LogDebug(ctx, "updateVideoSingleTask response: %s", responseBody)
+	logger.LogDebug(ctx, common.RedactedBodyLog("updateVideoSingleTask response body", len(responseBody)))
 
 	snap := task.Snapshot()
 
@@ -380,8 +381,8 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 	// try parse as New API response format
 	var responseItems dto.TaskResponse[model.Task]
 	if err = common.Unmarshal(responseBody, &responseItems); err == nil && responseItems.IsSuccess() {
-		logger.LogDebug(ctx, "updateVideoSingleTask parsed as new api response format: %+v", responseItems)
 		t := responseItems.Data
+		logger.LogDebug(ctx, "updateVideoSingleTask parsed as new api response format: task_id=%s status=%s progress=%s data_bytes=%d fail_reason_redacted=%t", t.TaskID, t.Status, t.Progress, len(t.Data), t.FailReason != "")
 		taskResult.TaskID = t.TaskID
 		taskResult.Status = string(t.Status)
 		taskResult.Url = t.GetResultURL()
@@ -394,7 +395,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 
 	task.Data = redactVideoResponseBody(responseBody)
 
-	logger.LogDebug(ctx, "updateVideoSingleTask taskResult: %+v", taskResult)
+	logger.LogDebug(ctx, "updateVideoSingleTask taskResult: task_id=%s status=%s progress=%s reason_redacted=%t url_redacted=%t", taskResult.TaskID, taskResult.Status, taskResult.Progress, taskResult.Reason != "", taskResult.Url != "")
 
 	now := time.Now().Unix()
 	if taskResult.Status == "" {
@@ -413,7 +414,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 				taskResult = relaycommon.FailTaskInfo("upstream returned error")
 			} else {
 				// unknown error format, log original response
-				logger.LogError(ctx, fmt.Sprintf("Task %s returned empty status with unrecognized error format, response: %s", taskId, string(responseBody)))
+				logger.LogError(ctx, fmt.Sprintf("Task %s returned empty status with unrecognized error format, %s", taskId, common.RedactedBodyLog("response body", len(responseBody))))
 				taskResult = relaycommon.FailTaskInfo("upstream returned unrecognized message")
 			}
 		}
@@ -451,14 +452,14 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 		}
 		shouldSettle = true
 	case model.TaskStatusFailure:
-		logger.LogJson(ctx, fmt.Sprintf("Task %s failed", taskId), task)
+		logger.LogWarn(ctx, fmt.Sprintf("Task %s failed, task_status=%s, progress=%s", taskId, task.Status, task.Progress))
 		task.Status = model.TaskStatusFailure
 		task.Progress = taskcommon.ProgressComplete
 		if task.FinishTime == 0 {
 			task.FinishTime = now
 		}
-		task.FailReason = taskResult.Reason
-		logger.LogInfo(ctx, fmt.Sprintf("Task %s failed: %s", task.TaskID, task.FailReason))
+		task.FailReason = common.RedactLogContent(taskResult.Reason)
+		logger.LogInfo(ctx, fmt.Sprintf("Task %s failed: reason_redacted=%t", task.TaskID, task.FailReason != ""))
 		taskResult.Progress = taskcommon.ProgressComplete
 		if quota != 0 {
 			shouldRefund = true

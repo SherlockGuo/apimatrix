@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { create } from 'zustand'
+import { removeUserId } from '@/features/auth/lib/storage'
 
 export type UserPermissions = {
   sidebar_settings?: boolean
@@ -34,11 +35,6 @@ export interface AuthUser {
   quota?: number
   used_quota?: number
   request_count?: number
-  aff_code?: string
-  aff_count?: number
-  aff_quota?: number
-  aff_history_quota?: number
-  inviter_id?: number
   github_id?: string
   oidc_id?: string
   wechat_id?: string
@@ -94,7 +90,9 @@ export const useAuthStore = create<AuthState>()((set) => {
         set((state) => {
           if (typeof window !== 'undefined') {
             window.localStorage.removeItem('user')
+            window.localStorage.removeItem('setup_status_checked')
           }
+          removeUserId()
           return {
             ...state,
             auth: { ...state.auth, user: null },

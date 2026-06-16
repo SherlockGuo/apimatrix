@@ -27,6 +27,7 @@ export type HeaderNavModules = {
   console: boolean
   pricing: ModuleAccess
   rankings: ModuleAccess
+  key: boolean
   docs: boolean
   about: boolean
   [key: string]: boolean | ModuleAccess
@@ -36,7 +37,8 @@ const DEFAULT_HEADER_NAV_MODULES: HeaderNavModules = {
   home: true,
   console: true,
   pricing: { enabled: true, requireAuth: false },
-  rankings: { enabled: true, requireAuth: false },
+  rankings: { enabled: false, requireAuth: false },
+  key: true,
   docs: true,
   about: true,
 }

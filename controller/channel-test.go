@@ -514,7 +514,7 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 		Group:            info.UsingGroup,
 		Other:            other,
 	})
-	common.SysLog(fmt.Sprintf("testing channel #%d, response: \n%s", channel.Id, string(respBody)))
+	common.SysLog(fmt.Sprintf("testing channel #%d, %s", channel.Id, common.RedactedBodyLog("response body", len(respBody))))
 	return testResult{
 		context:     c,
 		localErr:    nil,

@@ -78,6 +78,121 @@ For commercial licensing, please contact support@quantumnous.com
   }
 }
 
+@layer components {
+  .monochrome-public,
+  .monochrome-shell {
+    --radius: 0px;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0 0 0);
+    --primary: oklch(0 0 0);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.965 0 0);
+    --secondary-foreground: oklch(0 0 0);
+    --muted: oklch(0.965 0 0);
+    --muted-foreground: oklch(0.38 0 0);
+    --accent: oklch(0 0 0);
+    --accent-foreground: oklch(1 0 0);
+    --border: oklch(0 0 0);
+    --input: oklch(0 0 0);
+    --ring: oklch(0 0 0);
+    --sidebar: oklch(1 0 0);
+    --sidebar-foreground: oklch(0 0 0);
+    --sidebar-primary: oklch(0 0 0);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0 0 0);
+    --sidebar-accent-foreground: oklch(1 0 0);
+    --sidebar-border: oklch(0 0 0);
+    --sidebar-ring: oklch(0 0 0);
+    color: var(--foreground);
+  }
+
+  .dark .monochrome-public,
+  .dark .monochrome-shell {
+    --background: oklch(0 0 0);
+    --foreground: oklch(1 0 0);
+    --card: oklch(0 0 0);
+    --card-foreground: oklch(1 0 0);
+    --popover: oklch(0 0 0);
+    --popover-foreground: oklch(1 0 0);
+    --primary: oklch(1 0 0);
+    --primary-foreground: oklch(0 0 0);
+    --secondary: oklch(0.18 0 0);
+    --secondary-foreground: oklch(1 0 0);
+    --muted: oklch(0.18 0 0);
+    --muted-foreground: oklch(0.74 0 0);
+    --accent: oklch(1 0 0);
+    --accent-foreground: oklch(0 0 0);
+    --border: oklch(1 0 0);
+    --input: oklch(1 0 0);
+    --ring: oklch(1 0 0);
+    --sidebar: oklch(0 0 0);
+    --sidebar-foreground: oklch(1 0 0);
+    --sidebar-primary: oklch(1 0 0);
+    --sidebar-primary-foreground: oklch(0 0 0);
+    --sidebar-accent: oklch(1 0 0);
+    --sidebar-accent-foreground: oklch(0 0 0);
+    --sidebar-border: oklch(1 0 0);
+    --sidebar-ring: oklch(1 0 0);
+  }
+
+  .monochrome-public {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        color-mix(in oklch, var(--foreground) 5%, transparent) 3px,
+        color-mix(in oklch, var(--foreground) 5%, transparent) 4px
+      );
+  }
+
+  .monochrome-public button,
+  .monochrome-public a,
+  .monochrome-shell button,
+  .monochrome-shell a {
+    transition-duration: 100ms;
+  }
+
+  .monochrome-shell[data-slot='sidebar-wrapper'],
+  .monochrome-shell [data-slot='sidebar-wrapper'] {
+    background: var(--background);
+  }
+
+  .monochrome-shell [data-slot='sidebar-inner'] {
+    border-right: 1px solid var(--foreground);
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .monochrome-shell [data-slot='sidebar-inset'] {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .monochrome-shell [data-slot='sidebar-menu-button'],
+  .monochrome-shell [data-slot='sidebar-group-label'],
+  .monochrome-shell [data-slot='sidebar-menu-sub-button'],
+  .monochrome-shell [data-slot='sidebar-trigger'] {
+    border-radius: 0 !important;
+  }
+
+  .monochrome-shell [data-slot='sidebar-menu-button'][data-active],
+  .monochrome-shell [data-slot='sidebar-menu-sub-button'][data-active] {
+    background: var(--foreground);
+    color: var(--background);
+  }
+
+  .monochrome-shell [data-slot='sidebar-group-label'] {
+    color: color-mix(in oklch, var(--foreground) 62%, transparent);
+    font-family: var(--font-serif);
+    letter-spacing: 0.12em;
+  }
+}
+
 /* Vercel Geist-style skeleton shimmer */
 .skeleton-shimmer {
   background: linear-gradient(

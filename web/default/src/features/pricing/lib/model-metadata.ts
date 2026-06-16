@@ -57,7 +57,6 @@ const REASONING_NAME_PATTERNS = [
 
 const VISION_NAME_PATTERNS = [
   /vision/i,
-  /vl(?:[-_]|$)/i,
   /multimodal/i,
   /-omni/i,
 ]

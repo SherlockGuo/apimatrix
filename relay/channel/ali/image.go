@@ -321,9 +321,9 @@ func aliImageHandler(a *Adaptor, c *gin.Context, resp *http.Response, info *rela
 	}
 
 	if a.IsSyncImageModel {
-		logger.LogDebug(c, "ali_sync_image_result: %s", originRespBody)
+		logger.LogDebug(c, common.RedactedBodyLog("ali_sync_image_result body", len(originRespBody)))
 	} else {
-		logger.LogDebug(c, "ali_async_image_result: %s", originRespBody)
+		logger.LogDebug(c, common.RedactedBodyLog("ali_async_image_result body", len(originRespBody)))
 	}
 
 	imageResponses := responseAli2OpenAIImage(c, aliResponse, originRespBody, info, responseFormat)

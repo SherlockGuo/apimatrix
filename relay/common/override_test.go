@@ -2145,8 +2145,8 @@ func TestApplyParamOverrideWithRelayInfoRecordsOperationAuditInDebugMode(t *test
 
 	expected := []string{
 		"copy metadata.target_model -> model",
-		"set service_tier = flex",
-		"set temperature = 0.1",
+		fmt.Sprintf("set service_tier = %s (bytes=4)", common2.RedactedLogContent),
+		fmt.Sprintf("set temperature = %s (bytes=3)", common2.RedactedLogContent),
 	}
 	if !reflect.DeepEqual(info.ParamOverrideAudit, expected) {
 		t.Fatalf("unexpected param override audit, got %#v", info.ParamOverrideAudit)
@@ -2263,10 +2263,10 @@ func TestApplyParamOverrideWithRelayInfoRecordsConversationBodyOperationsWhenDeb
 	}`, string(out))
 
 	require.Equal(t, []string{
-		"replace messages.0.content from hello to hi",
-		"set input.0.content.0.text = rewritten response input",
-		"set instructions = new instruction",
-		"append contents.0.parts with {\"text\":\"new gemini part\"}",
+		fmt.Sprintf("replace messages.0.content from %s (bytes=5) to %s (bytes=2)", common2.RedactedLogContent, common2.RedactedLogContent),
+		fmt.Sprintf("set input.0.content.0.text = %s (bytes=24)", common2.RedactedLogContent),
+		fmt.Sprintf("set instructions = %s (bytes=15)", common2.RedactedLogContent),
+		fmt.Sprintf("append contents.0.parts with %s (bytes=26)", common2.RedactedLogContent),
 		"copy system -> metadata.system_copy",
 	}, info.ParamOverrideAudit)
 }

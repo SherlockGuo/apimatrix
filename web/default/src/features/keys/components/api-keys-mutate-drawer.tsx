@@ -267,8 +267,12 @@ export function ApiKeysMutateDrawer({
           </SheetTitle>
           <SheetDescription>
             {isUpdate
-              ? t('Update the API key by providing necessary info.')
-              : t('Add a new API key by providing necessary info.')}
+              ? t(
+                  'Update the local API key used for text model access and billing controls.'
+                )
+              : t(
+                  'Create a local API key for OpenAI, Claude, and Gemini text-compatible requests.'
+                )}
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>

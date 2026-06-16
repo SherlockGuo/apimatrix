@@ -1,11 +1,19 @@
 package claude
 
 import (
+	"bytes"
 	"encoding/base64"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/types"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 
@@ -178,6 +186,48 @@ func TestFormatClaudeResponseInfo_ContentBlockDelta(t *testing.T) {
 	if claudeInfo.ResponseText.String() != "hello" {
 		t.Errorf("ResponseText = %q, want %q", claudeInfo.ResponseText.String(), "hello")
 	}
+}
+
+func TestClaudeHandlerFallsBackToTextUsageWhenUpstreamUsageMissing(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	info := &relaycommon.RelayInfo{
+		RelayFormat:     types.RelayFormatClaude,
+		OriginModelName: "claude-sonnet-4-6",
+		ChannelMeta: &relaycommon.ChannelMeta{
+			UpstreamModelName: "claude-sonnet-4-6",
+		},
+	}
+	info.SetEstimatePromptTokens(7)
+
+	text := "hello from upstream"
+	payload := dto.ClaudeResponse{
+		Id:         "msg_123",
+		Type:       "message",
+		Role:       "assistant",
+		Model:      "claude-sonnet-4-6",
+		StopReason: "end_turn",
+		Content: []dto.ClaudeMediaMessage{
+			{Type: "text", Text: &text},
+		},
+	}
+
+	body, err := common.Marshal(payload)
+	require.NoError(t, err)
+
+	resp := &http.Response{
+		Body: io.NopCloser(bytes.NewReader(body)),
+	}
+
+	usage, apiErr := ClaudeHandler(c, resp, info)
+	require.Nil(t, apiErr)
+	require.NotNil(t, usage)
+	require.Equal(t, 7, usage.PromptTokens)
+	require.Greater(t, usage.CompletionTokens, 0)
+	require.Equal(t, usage.PromptTokens+usage.CompletionTokens, usage.TotalTokens)
+	require.Equal(t, "anthropic", usage.UsageSemantic)
 }
 
 func TestBuildOpenAIStyleUsageFromClaudeUsage(t *testing.T) {

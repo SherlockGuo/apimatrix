@@ -161,10 +161,9 @@ export const ENDPOINT_TEMPLATES: Record<
 > = {
   openai: { path: '/v1/chat/completions', method: 'POST' },
   'openai-response': { path: '/v1/responses', method: 'POST' },
-  anthropic: { path: '/v1/messages', method: 'POST' },
+  anthropic: { path: '/anthropic/messages', method: 'POST' },
   gemini: { path: '/v1beta/models/{model}:generateContent', method: 'POST' },
   'jina-rerank': { path: '/rerank', method: 'POST' },
-  'image-generation': { path: '/v1/images/generations', method: 'POST' },
   embeddings: { path: '/v1/embeddings', method: 'POST' },
 }
 

@@ -98,25 +98,27 @@ export function Stats(_props: StatsProps) {
   const { t } = useTranslation()
 
   const stats: StatItem[] = [
-    { end: 50, suffix: '+', label: t('upstream services integrated') },
-    { end: 100, suffix: '+', label: t('model billing support') },
-    { end: 50, suffix: '+', label: t('compatible API routes') },
-    { end: 10, suffix: '+', label: t('scheduling controls') },
+    { end: 3, suffix: '', label: t('text protocol families') },
+    { end: 21, suffix: '', label: t('ready-to-call text models') },
   ]
 
   return (
-    <div className='border-border/40 bg-muted/10 relative z-10 border-y'>
-      <div className='mx-auto max-w-6xl px-6 py-10 md:py-12'>
-        <div className='grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-12'>
+    <div className='relative z-10 border-b-4 border-foreground bg-foreground text-background'>
+      <div
+        aria-hidden
+        className='pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent,transparent_7px,color-mix(in_oklch,var(--background)_12%,transparent)_7px,color-mix(in_oklch,var(--background)_12%,transparent)_8px)] opacity-40'
+      />
+      <div className='relative mx-auto max-w-6xl px-6 py-12 md:py-16'>
+        <div className='mx-auto grid max-w-3xl grid-cols-2 border-x border-background/50'>
           {stats.map((s) => (
             <div
               key={s.label}
-              className='flex flex-col items-center text-center'
+              className='flex flex-col items-center border-background/50 px-6 py-4 text-center first:border-r'
             >
-              <span className='text-2xl font-bold tracking-tight md:text-3xl'>
+              <span className='font-serif text-5xl leading-none font-semibold tracking-tight md:text-7xl'>
                 <Counter end={s.end} suffix={s.suffix} decimals={s.decimals} />
               </span>
-              <span className='text-muted-foreground mt-1.5 text-xs'>
+              <span className='mt-3 font-mono text-[11px] tracking-[0.14em] text-background/70 uppercase'>
                 {s.label}
               </span>
             </div>

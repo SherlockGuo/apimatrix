@@ -1,0 +1,29 @@
+root = "."
+tmp_dir = "/tmp/new-api-air"
+
+[build]
+  cmd = "/usr/local/go/bin/go build -o /tmp/new-api-air/new-api ."
+  bin = "/tmp/new-api-air/new-api"
+  delay = 1000
+  exclude_dir = [
+    ".git",
+    ".agents",
+    ".codex",
+    "data",
+    "logs",
+    "web"
+  ]
+  exclude_file = []
+  exclude_regex = ["_test.go"]
+  include_ext = ["go", "mod", "sum", "yaml", "yml"]
+  kill_delay = "500ms"
+  log = "air-build.log"
+  poll = false
+  send_interrupt = true
+  stop_on_error = true
+
+[log]
+  time = true
+
+[misc]
+  clean_on_exit = true

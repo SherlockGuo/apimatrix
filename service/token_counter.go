@@ -106,7 +106,7 @@ func getImageToken(c *gin.Context, fileMeta *types.FileMeta, model string, strea
 			// file type
 			return 3 * baseTokens, nil
 		}
-		return 0, errors.New(fmt.Sprintf("fail to decode image config: %s", fileMeta.GetIdentifier()))
+		return 0, errors.New("fail to decode image config")
 	}
 
 	width := config.Width
@@ -274,7 +274,7 @@ func EstimateRequestToken(c *gin.Context, meta *types.TokenCountMeta, info *rela
 			if common.IsOpenAITextModel(model) {
 				token, err := getImageToken(c, file, model, info.IsStream)
 				if err != nil {
-					return 0, fmt.Errorf("error counting image token, media index[%d], identifier[%s], err: %v", i, file.GetIdentifier(), err)
+					return 0, fmt.Errorf("error counting image token, media index[%d], err: %v", i, err)
 				}
 				tkm += token
 			} else {

@@ -23,7 +23,6 @@ import { Sparkles, Users, ToggleLeft, X, Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { renderGroupOption, selectFilter } from '../../helpers';
 import ParameterControl from './ParameterControl';
-import ImageUrlInput from './ImageUrlInput';
 import ConfigManager from './ConfigManager';
 import CustomRequestEditor from './CustomRequestEditor';
 
@@ -172,19 +171,6 @@ const SettingsPanel = ({
             style={{ width: '100%' }}
             dropdownStyle={{ width: '100%', maxWidth: '100%' }}
             className='!rounded-lg'
-            disabled={customRequestMode}
-          />
-        </div>
-
-        {/* 图片URL输入 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
-          <ImageUrlInput
-            imageUrls={inputs.imageUrls}
-            imageEnabled={inputs.imageEnabled}
-            onImageUrlsChange={(urls) => onInputChange('imageUrls', urls)}
-            onImageEnabledChange={(enabled) =>
-              onInputChange('imageEnabled', enabled)
-            }
             disabled={customRequestMode}
           />
         </div>

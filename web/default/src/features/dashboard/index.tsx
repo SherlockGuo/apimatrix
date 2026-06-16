@@ -25,6 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SectionPageLayout } from '@/components/layout'
 import { FadeIn } from '@/components/page-transition'
+import { ModelAnalyticsGuide } from './components/models/model-analytics-guide'
 import { ModelsChartPreferences } from './components/models/models-chart-preferences'
 import { ModelsFilter } from './components/models/models-filter-dialog'
 import { OverviewDashboard } from './components/overview/overview-dashboard'
@@ -135,7 +136,7 @@ const SECTION_META: Record<DashboardSectionId, { titleKey: string }> = {
     titleKey: 'Overview',
   },
   models: {
-    titleKey: 'Model Call Analytics',
+    titleKey: 'Data Dashboard',
   },
   users: {
     titleKey: 'User Analytics',
@@ -248,6 +249,9 @@ export function Dashboard() {
           {activeSection === 'overview' && <OverviewDashboard />}
           {activeSection === 'models' && (
             <>
+              <FadeIn>
+                <ModelAnalyticsGuide />
+              </FadeIn>
               <FadeIn>
                 <Suspense fallback={<LogStatCardsFallback />}>
                   <LazyLogStatCards

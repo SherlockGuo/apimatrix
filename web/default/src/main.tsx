@@ -43,8 +43,20 @@ import { routeTree } from './routeTree.gen'
 // Styles
 import './styles/index.css'
 
+function redirectLoopbackIPv4ToLocalhost() {
+  if (typeof window === 'undefined') return
+
+  const { location } = window
+  if (location.hostname !== '127.0.0.1') return
+
+  const target = new URL(location.href)
+  target.hostname = 'localhost'
+  location.replace(target.toString())
+}
+
 // Ensure VChart theme is initialized before any chart mounts (prevents white default theme flash)
 // VChart theme is driven by our ThemeProvider (html.light/html.dark) via per-chart `theme` prop.
+redirectLoopbackIPv4ToLocalhost()
 initializeFrontendCache()
 installBuildMetadata()
 

@@ -109,7 +109,7 @@ func RelayMidjourneyNotify(c *gin.Context) *dto.MidjourneyResponse {
 		}
 	}
 	midjourneyTask.Progress = midjRequest.Progress
-	midjourneyTask.PromptEn = midjRequest.PromptEn
+	midjourneyTask.PromptEn = common.RedactedLogContent
 	midjourneyTask.State = midjRequest.State
 	midjourneyTask.SubmitTime = midjRequest.SubmitTime
 	midjourneyTask.StartTime = midjRequest.StartTime
@@ -119,7 +119,7 @@ func RelayMidjourneyNotify(c *gin.Context) *dto.MidjourneyResponse {
 	videoUrlsStr, _ := json.Marshal(midjRequest.VideoUrls)
 	midjourneyTask.VideoUrls = string(videoUrlsStr)
 	midjourneyTask.Status = midjRequest.Status
-	midjourneyTask.FailReason = midjRequest.FailReason
+	midjourneyTask.FailReason = common.RedactLogContent(midjRequest.FailReason)
 	err = midjourneyTask.Update()
 	if err != nil {
 		return &dto.MidjourneyResponse{
@@ -566,8 +566,8 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 		Code:        midjResponse.Code,
 		Action:      midjRequest.Action,
 		MjId:        midjResponse.Result,
-		Prompt:      midjRequest.Prompt,
-		PromptEn:    "",
+		Prompt:      common.RedactedLogContent,
+		PromptEn:    common.RedactedLogContent,
 		Description: midjResponse.Description,
 		State:       "",
 		SubmitTime:  time.Now().UnixNano() / int64(time.Millisecond),
@@ -592,7 +592,7 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 	}
 	if midjResponse.Code != 1 && midjResponse.Code != 21 && midjResponse.Code != 22 {
 		//非1-提交成功,21-任务已存在和22-排队中，则记录错误原因
-		midjourneyTask.FailReason = midjResponse.Description
+		midjourneyTask.FailReason = common.RedactLogContent(midjResponse.Description)
 		consumeQuota = false
 	}
 

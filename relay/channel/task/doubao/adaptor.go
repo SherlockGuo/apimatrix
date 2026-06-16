@@ -215,7 +215,7 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 	// Parse Doubao response
 	var dResp responsePayload
 	if err := common.Unmarshal(responseBody, &dResp); err != nil {
-		taskErr = service.TaskErrorWrapper(errors.Wrapf(err, "body: %s", responseBody), "unmarshal_response_body_failed", http.StatusInternalServerError)
+		taskErr = service.TaskErrorWrapper(errors.Wrap(err, common.RedactedBodyLog("response body", len(responseBody))), "unmarshal_response_body_failed", http.StatusInternalServerError)
 		return
 	}
 

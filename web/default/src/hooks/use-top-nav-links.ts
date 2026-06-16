@@ -30,6 +30,10 @@ export type TopNavLink = {
   external?: boolean
 }
 
+export function isExternalDocsLink(link: string | undefined): boolean {
+  return Boolean(link && /^https?:\/\//i.test(link))
+}
+
 /**
  * Generate top navigation links based on HeaderNavModules configuration from backend /api/status
  * Backend format example (stringified JSON):
@@ -83,17 +87,14 @@ export function useTopNavLinks(): TopNavLink[] {
     links.push({ title: t('Token Lookup'), href: '/key' })
   }
 
-  // Rankings
-  const rankings = modules?.rankings
-  if (rankings && typeof rankings === 'object' && rankings.enabled) {
-    const requiresAuth = rankings.requireAuth && !isAuthed
-    links.push({ title: t('Rankings'), href: '/rankings', requiresAuth })
-  }
-
   // Docs (supports external links)
   if (modules?.docs !== false) {
     if (docsLink) {
-      links.push({ title: t('Docs'), href: docsLink, external: true })
+      links.push({
+        title: t('Docs'),
+        href: docsLink,
+        external: isExternalDocsLink(docsLink),
+      })
     } else {
       links.push({ title: t('Docs'), href: '/docs' })
     }

@@ -15,7 +15,7 @@ export default defineConfig(({ envMode }) => {
 
   const isProd = envMode === 'production'
   const devProxy = Object.fromEntries(
-    (['/api', '/mj', '/pg'] as const).map((key) => [
+    (['/api', '/v1', '/mj', '/pg', '/anthropic', '/gemini'] as const).map((key) => [
       key,
       { target: serverUrl, changeOrigin: true },
     ]),

@@ -111,7 +111,7 @@ func UpdateMidjourneyTaskBulk() {
 			var responseItems []dto.MidjourneyDto
 			err = json.Unmarshal(responseBody, &responseItems)
 			if err != nil {
-				logger.LogError(ctx, fmt.Sprintf("Get Mjp Task parse body error2: %v, body: %s", err, string(responseBody)))
+				logger.LogError(ctx, fmt.Sprintf("Get Mjp Task parse body error2: %v, %s", err, common.RedactedBodyLog("response body", len(responseBody))))
 				continue
 			}
 			resp.Body.Close()
@@ -167,7 +167,8 @@ func UpdateMidjourneyTaskBulk() {
 
 				shouldReturnQuota := false
 				if (task.Progress != "100%" && responseItem.FailReason != "") || (task.Progress == "100%" && task.Status == "FAILURE") {
-					logger.LogInfo(ctx, task.MjId+" 构建失败，"+task.FailReason)
+					task.FailReason = common.RedactLogContent(task.FailReason)
+					logger.LogInfo(ctx, fmt.Sprintf("%s 构建失败，reason_redacted=%t", task.MjId, task.FailReason != ""))
 					task.Progress = "100%"
 					if task.Quota != 0 {
 						shouldReturnQuota = true

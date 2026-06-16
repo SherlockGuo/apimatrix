@@ -1,14 +1,18 @@
 package constant
 
 const (
-	SingleUpstreamChannelName = "Single Upstream API"
-	SingleUpstreamBaseURL     = "http://211.136.118.26:32001"
+	SingleUpstreamChannelName          = "Single Upstream API"
+	SingleUpstreamAnthropicChannelName = "Single Upstream API - Anthropic"
+	SingleUpstreamGeminiChannelName    = "Single Upstream API - Gemini"
+	SingleUpstreamBaseURL              = "http://211.136.118.26:32001"
 )
 
 var SingleUpstreamTextModels = []string{
 	"claude-haiku-4-5-20251001",
 	"claude-sonnet-4-6",
 	"claude-opus-4-6",
+	"claude-opus-4-7",
+	"claude-opus-4-8",
 	"DeepSeek-V3.2",
 	"Doubao-Seed-2.0-Pro",
 	"gemini-3.1-pro-preview",
@@ -27,4 +31,18 @@ var SingleUpstreamTextModels = []string{
 	"qwen3-vl-plus",
 	"Tencent-HY-2.0-Instruct",
 	"Tencent-HY-2.0-Think",
+}
+
+var SingleUpstreamAnthropicModels = []string{
+	"claude-haiku-4-5-20251001",
+	"claude-sonnet-4-6",
+	"claude-opus-4-6",
+	"claude-opus-4-7",
+	"claude-opus-4-8",
+}
+
+var SingleUpstreamGeminiModels = []string{
+	"gemini-3.1-pro-preview",
+	"gemini-3-pro-preview",
+	"gemini-flash-latest",
 }

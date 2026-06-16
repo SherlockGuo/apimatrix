@@ -233,7 +233,7 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 
 			ticker.Reset(streamingTimeout)
 			data := scanner.Text()
-			logger.LogDebug(c, "stream scanner data: %s", data)
+			logger.LogDebug(c, common.RedactedBodyLog("stream scanner data", len(data)))
 
 			if len(data) < 6 {
 				continue

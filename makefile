@@ -31,7 +31,9 @@ start-backend:
 	@cd $(BACKEND_DIR) && go run main.go &
 
 dev-api:
-	@echo "Starting backend services (docker)..."
+	@echo "Starting Docker hot-reload dev stack..."
+	@echo "Frontend: http://localhost:$(DEV_FRONTEND_DEFAULT_PORT)"
+	@echo "Backend API: http://localhost:$${DEV_API_PORT:-3002}"
 	@docker compose -f $(DEV_COMPOSE_FILE) up -d
 
 dev-api-rebuild:
@@ -69,7 +71,7 @@ dev-web-classic:
 	@cd ./web && bun install
 	@cd $(FRONTEND_CLASSIC_DIR) && bun run dev -- --host 0.0.0.0 --port $(DEV_FRONTEND_CLASSIC_PORT)
 
-dev: dev-api dev-web
+dev: dev-api
 
 reset-setup:
 	@echo "Resetting local setup wizard state..."

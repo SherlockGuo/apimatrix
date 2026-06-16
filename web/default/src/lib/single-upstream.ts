@@ -47,7 +47,7 @@ export const CROSS_BORDER_TEXT_MODELS = [
   {
     model: 'gemini-3.1-pro-preview',
     vendor: 'Google',
-    scenario: 'Vision and text understanding',
+    scenario: 'Complex text understanding',
   },
   { model: 'gemini-3-pro-preview', vendor: 'Google', scenario: 'Complex work' },
   {
@@ -76,7 +76,7 @@ export const CROSS_BORDER_TEXT_MODELS = [
   {
     model: 'qwen3-vl-plus',
     vendor: 'Alibaba',
-    scenario: 'Multimodal understanding',
+    scenario: 'Document and text understanding',
   },
   {
     model: 'Tencent-HY-2.0-Instruct',
@@ -90,33 +90,10 @@ export const CROSS_BORDER_TEXT_MODELS = [
   },
 ] as const
 
-export const CROSS_BORDER_IMAGE_MODELS = [
-  {
-    model: 'gemini-2.5-flash-image-preview',
-    protocol: 'Gemini',
-    scenario: 'Fast image generation',
-  },
-  {
-    model: 'gemini-3.1-flash-image-preview',
-    protocol: 'Gemini',
-    scenario: 'General image generation',
-  },
-  {
-    model: 'gemini-3-pro-image-preview',
-    protocol: 'Gemini',
-    scenario: 'Commercial quality',
-  },
-  {
-    model: 'gpt-image-1.5',
-    protocol: 'OpenAI Images',
-    scenario: 'Design generation',
-  },
-] as const
-
 export const CROSS_BORDER_PROTOCOL_HINTS = [
   'Text models can use the OpenAI-compatible /v1/chat/completions endpoint.',
   'Claude models can also use the Anthropic-compatible ' +
     '/anthropic/messages endpoint.',
-  'Gemini text and Gemini image models use Gemini generateContent endpoints.',
-  'Only gpt-image-1.5 uses the OpenAI image generation endpoint.',
+  'Gemini text models use Gemini generateContent endpoints.',
+  'Image, video, and TTS endpoints are intentionally not exposed in this deployment.',
 ] as const

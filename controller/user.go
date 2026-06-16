@@ -212,19 +212,16 @@ func Register(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserExists)
 		return
 	}
-	affCode := user.AffCode // this code is the inviter's code, not the user's own code
-	inviterId, _ := model.GetUserIdByAffCode(affCode)
 	cleanUser := model.User{
 		Username:    user.Username,
 		Password:    user.Password,
 		DisplayName: user.Username,
-		InviterId:   inviterId,
 		Role:        common.RoleCommonUser, // 明确设置角色为普通用户
 	}
 	if common.EmailVerificationEnabled {
 		cleanUser.Email = user.Email
 	}
-	if err := cleanUser.Insert(inviterId); err != nil {
+	if err := cleanUser.Insert(0); err != nil {
 		common.ApiError(c, err)
 		return
 	}
@@ -449,31 +446,26 @@ func GetSelf(c *gin.Context) {
 
 	// 构建响应数据，包含用户信息和权限
 	responseData := map[string]interface{}{
-		"id":                user.Id,
-		"username":          user.Username,
-		"display_name":      user.DisplayName,
-		"role":              user.Role,
-		"status":            user.Status,
-		"email":             user.Email,
-		"github_id":         user.GitHubId,
-		"discord_id":        user.DiscordId,
-		"oidc_id":           user.OidcId,
-		"wechat_id":         user.WeChatId,
-		"telegram_id":       user.TelegramId,
-		"group":             user.Group,
-		"quota":             user.Quota,
-		"used_quota":        user.UsedQuota,
-		"request_count":     user.RequestCount,
-		"aff_code":          user.AffCode,
-		"aff_count":         user.AffCount,
-		"aff_quota":         user.AffQuota,
-		"aff_history_quota": user.AffHistoryQuota,
-		"inviter_id":        user.InviterId,
-		"linux_do_id":       user.LinuxDOId,
-		"setting":           user.Setting,
-		"stripe_customer":   user.StripeCustomer,
-		"sidebar_modules":   userSetting.SidebarModules, // 正确提取sidebar_modules字段
-		"permissions":       permissions,                // 新增权限字段
+		"id":              user.Id,
+		"username":        user.Username,
+		"display_name":    user.DisplayName,
+		"role":            user.Role,
+		"status":          user.Status,
+		"email":           user.Email,
+		"github_id":       user.GitHubId,
+		"discord_id":      user.DiscordId,
+		"oidc_id":         user.OidcId,
+		"wechat_id":       user.WeChatId,
+		"telegram_id":     user.TelegramId,
+		"group":           user.Group,
+		"quota":           user.Quota,
+		"used_quota":      user.UsedQuota,
+		"request_count":   user.RequestCount,
+		"linux_do_id":     user.LinuxDOId,
+		"setting":         user.Setting,
+		"stripe_customer": user.StripeCustomer,
+		"sidebar_modules": userSetting.SidebarModules, // 正确提取sidebar_modules字段
+		"permissions":     permissions,                // 新增权限字段
 	}
 
 	c.JSON(http.StatusOK, gin.H{

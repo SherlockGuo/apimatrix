@@ -128,6 +128,9 @@ func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
 }
 
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
+	if strings.HasPrefix(info.RequestURLPath, "/gemini/") {
+		return relaycommon.GetFullRequestURL(info.ChannelBaseUrl, info.RequestURLPath, info.ChannelType), nil
+	}
 
 	if model_setting.GetGeminiSettings().ThinkingAdapterEnabled &&
 		!model_setting.ShouldPreserveThinkingSuffix(info.OriginModelName) {
@@ -172,6 +175,10 @@ func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Header, info *relaycommon.RelayInfo) error {
 	channel.SetupApiRequestHeader(info, c, req)
+	if strings.HasPrefix(info.RequestURLPath, "/gemini/") {
+		req.Set("Authorization", "Bearer "+info.ApiKey)
+		return nil
+	}
 	req.Set("x-goog-api-key", info.ApiKey)
 	return nil
 }

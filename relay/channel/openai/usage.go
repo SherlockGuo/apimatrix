@@ -11,6 +11,7 @@ func applyUsagePostProcessing(info *relaycommon.RelayInfo, usage *dto.Usage, res
 	if info == nil || usage == nil {
 		return
 	}
+	normalizeUsageTokenAliases(usage)
 
 	switch info.ChannelType {
 	case constant.ChannelTypeDeepSeek:
@@ -47,6 +48,44 @@ func applyUsagePostProcessing(info *relaycommon.RelayInfo, usage *dto.Usage, res
 				usage.PromptTokensDetails.CachedTokens = cachedTokens
 			}
 		}
+	}
+}
+
+func normalizeUsageTokenAliases(usage *dto.Usage) {
+	if usage == nil {
+		return
+	}
+	if usage.PromptTokens == 0 && usage.InputTokens > 0 {
+		usage.PromptTokens = usage.InputTokens
+	}
+	if usage.CompletionTokens == 0 && usage.OutputTokens > 0 {
+		usage.CompletionTokens = usage.OutputTokens
+	}
+	if usage.InputTokens == 0 && usage.PromptTokens > 0 {
+		usage.InputTokens = usage.PromptTokens
+	}
+	if usage.OutputTokens == 0 && usage.CompletionTokens > 0 {
+		usage.OutputTokens = usage.CompletionTokens
+	}
+	if usage.InputTokensDetails != nil {
+		if usage.PromptTokensDetails.CachedTokens == 0 {
+			usage.PromptTokensDetails.CachedTokens = usage.InputTokensDetails.CachedTokens
+		}
+		if usage.PromptTokensDetails.CachedCreationTokens == 0 {
+			usage.PromptTokensDetails.CachedCreationTokens = usage.InputTokensDetails.CachedCreationTokens
+		}
+		if usage.PromptTokensDetails.TextTokens == 0 {
+			usage.PromptTokensDetails.TextTokens = usage.InputTokensDetails.TextTokens
+		}
+		if usage.PromptTokensDetails.AudioTokens == 0 {
+			usage.PromptTokensDetails.AudioTokens = usage.InputTokensDetails.AudioTokens
+		}
+		if usage.PromptTokensDetails.ImageTokens == 0 {
+			usage.PromptTokensDetails.ImageTokens = usage.InputTokensDetails.ImageTokens
+		}
+	}
+	if usage.TotalTokens == 0 && (usage.PromptTokens != 0 || usage.CompletionTokens != 0) {
+		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	}
 }
 

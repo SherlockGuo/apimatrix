@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -88,7 +87,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 	defer func() {
 		if newAPIError != nil {
-			logger.LogError(c, fmt.Sprintf("relay error: %s", common.LocalLogPreview(newAPIError.Error())))
+			logger.LogError(c, fmt.Sprintf("relay error: status_code=%d error_code=%s message_redacted=%t", newAPIError.StatusCode, newAPIError.GetErrorCode(), newAPIError.Error() != ""))
 			newAPIError.SetMessage(common.MessageWithRequestId(newAPIError.Error(), requestId))
 			switch relayFormat {
 			case types.RelayFormatOpenAIRealtime:
@@ -136,7 +135,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	if needSensitiveCheck && meta != nil {
 		contains, words := service.CheckSensitiveText(meta.CombineText)
 		if contains {
-			logger.LogWarn(c, fmt.Sprintf("user sensitive words detected: %s", strings.Join(words, ", ")))
+			logger.LogWarn(c, fmt.Sprintf("user sensitive words detected: count=%d", len(words)))
 			newAPIError = types.NewError(err, types.ErrorCodeSensitiveWordsDetected)
 			return
 		}
@@ -354,7 +353,7 @@ func shouldRetry(c *gin.Context, openaiErr *types.NewAPIError, retryTimes int) b
 }
 
 func processChannelError(c *gin.Context, channelError types.ChannelError, err *types.NewAPIError) {
-	logger.LogError(c, fmt.Sprintf("channel error (channel #%d, status code: %d): %s", channelError.ChannelId, err.StatusCode, common.LocalLogPreview(err.Error())))
+	logger.LogError(c, fmt.Sprintf("channel error (channel #%d, status code: %d, error code: %s, message_redacted=%t)", channelError.ChannelId, err.StatusCode, err.GetErrorCode(), err.Error() != ""))
 	// 不要使用context获取渠道信息，异步处理时可能会出现渠道信息不一致的情况
 	// do not use context to get channel info, there may be inconsistent channel info when processing asynchronously
 	if service.ShouldDisableChannel(err) && channelError.AutoBan {
@@ -426,7 +425,6 @@ func RelayMidjourney(c *gin.Context) {
 		mjErr = relay.RelayMidjourneySubmit(c, relayInfo)
 	}
 	//err = relayMidjourneySubmit(c, relayMode)
-	log.Println(mjErr)
 	if mjErr != nil {
 		statusCode := http.StatusBadRequest
 		if mjErr.Code == 30 {
@@ -439,7 +437,7 @@ func RelayMidjourney(c *gin.Context) {
 			"code":        mjErr.Code,
 		})
 		channelId := c.GetInt("channel_id")
-		logger.LogError(c, fmt.Sprintf("relay error (channel #%d, status code %d): %s", channelId, statusCode, fmt.Sprintf("%s %s", mjErr.Description, mjErr.Result)))
+		logger.LogError(c, fmt.Sprintf("relay error (channel #%d, status code %d, code=%d): upstream message omitted for privacy", channelId, statusCode, mjErr.Code))
 	}
 }
 

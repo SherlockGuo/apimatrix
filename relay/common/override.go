@@ -283,14 +283,26 @@ func shouldAuditOperation(mode, path, from, to string) bool {
 }
 
 func formatParamOverrideAuditValue(value interface{}) string {
+	valueText := ""
 	switch typed := value.(type) {
 	case nil:
-		return "<empty>"
+		valueText = ""
 	case string:
-		return typed
+		valueText = typed
 	default:
-		return common.GetJsonString(typed)
+		valueText = common.GetJsonString(typed)
 	}
+	if strings.TrimSpace(valueText) == "" {
+		return "<empty>"
+	}
+	return fmt.Sprintf("%s (bytes=%d)", common.RedactedLogContent, len(valueText))
+}
+
+func formatParamOverrideAuditText(value string) string {
+	if strings.TrimSpace(value) == "" {
+		return "<empty>"
+	}
+	return fmt.Sprintf("%s (bytes=%d)", common.RedactedLogContent, len(value))
 }
 
 func buildParamOverrideAuditLine(mode, path, from, to string, value interface{}) string {
@@ -348,7 +360,7 @@ func buildParamOverrideAuditLine(mode, path, from, to string, value interface{})
 		if path == "" {
 			return ""
 		}
-		return fmt.Sprintf("%s %s from %s to %s", mode, path, from, to)
+		return fmt.Sprintf("%s %s from %s to %s", mode, path, formatParamOverrideAuditText(from), formatParamOverrideAuditText(to))
 	case "set_header":
 		if path == "" {
 			return ""

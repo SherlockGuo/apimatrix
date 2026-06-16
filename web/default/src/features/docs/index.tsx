@@ -82,6 +82,8 @@ const navSections: NavSection[] = [
     links: [
       { href: '#thinking', label: 'Claude thinking' },
       { href: '#summary', label: '接入方式汇总' },
+      { href: '#privacy', label: '隐私与日志' },
+      { href: '#errors', label: '错误与重试' },
       { href: '#notes', label: '接入注意事项' },
     ],
   },
@@ -140,15 +142,15 @@ const summaryRows: SummaryRow[] = [
   },
   {
     type: 'Claude 原生消息',
-    endpoint: 'POST /anthropic/messages',
+    endpoint: 'POST /anthropic/v1/messages',
     auth: 'x-api-key: <YOUR_API_KEY>',
-    status: '可选',
+    status: '推荐',
   },
   {
     type: 'Gemini 原生内容生成',
     endpoint: 'POST /gemini/v1/models/{model}:generateContent',
     auth: 'Authorization: Bearer <YOUR_API_KEY>',
-    status: '可选',
+    status: '推荐',
   },
   {
     type: 'NewAPI 兼容文本',
@@ -273,7 +275,7 @@ response = client.chat.completions.create(
     max_tokens=512,
 )
 print(response.choices[0].message.content)`,
-      claude: `curl "${baseUrl}/anthropic/messages" \\
+      claude: `curl "${baseUrl}/anthropic/v1/messages" \\
   -H "x-api-key: <YOUR_API_KEY>" \\
   -H "anthropic-version: 2023-06-01" \\
   -H "content-type: application/json" \\
@@ -467,7 +469,9 @@ print(response.choices[0].message.content)`,
 
             <DocsSection id='claude' eyebrow='Anthropic' title='Claude 文本'>
               <p className='text-muted-foreground text-sm leading-6'>
-                接口：<InlineCode>POST /anthropic/messages</InlineCode>。
+                推荐接口：<InlineCode>POST /anthropic/v1/messages</InlineCode>。
+                同时兼容 <InlineCode>POST /anthropic/messages</InlineCode> 与{' '}
+                <InlineCode>POST /v1/messages</InlineCode>。
                 鉴权头为 <InlineCode>x-api-key</InlineCode>，需带{' '}
                 <InlineCode>anthropic-version</InlineCode>。
               </p>
@@ -487,6 +491,17 @@ print(response.choices[0].message.content)`,
                 。 鉴权头使用 <InlineCode>Authorization: Bearer</InlineCode>。
               </p>
               <CodeSnippet code={snippets.gemini} />
+              <Alert>
+                <AlertTitle>兼容路径</AlertTitle>
+                <AlertDescription>
+                  也可以使用{' '}
+                  <InlineCode>
+                    /v1beta/models/{'{model}'}:generateContent
+                  </InlineCode>{' '}
+                  并通过 <InlineCode>x-goog-api-key</InlineCode>{' '}
+                  鉴权，便于兼容已有 Gemini SDK。
+                </AlertDescription>
+              </Alert>
             </DocsSection>
 
             <DocsSection
@@ -536,6 +551,73 @@ print(response.choices[0].message.content)`,
                 data={summaryRows}
                 getRowKey={(row) => row.type}
               />
+            </DocsSection>
+
+            <DocsSection id='privacy' title='隐私与日志记录'>
+              <div className='grid gap-3 md:grid-cols-2'>
+                <div className='bg-background rounded-lg border p-4'>
+                  <div className='text-sm font-semibold'>请求内容不落库</div>
+                  <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                    平台不会在使用日志、钱包记录、错误日志中保存 prompt、
+                    messages、response body、文件内容或其他请求正文。日志仅保留模型、
+                    token、状态码、耗时、计费用量等运营元数据。
+                  </p>
+                </div>
+                <div className='bg-background rounded-lg border p-4'>
+                  <div className='text-sm font-semibold'>密钥本地管理</div>
+                  <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                    客户只使用平台签发的本地 API Key。上游供应商 Key
+                    由服务端统一配置，不需要在客户端、脚本或业务系统中暴露。
+                  </p>
+                </div>
+              </div>
+              <Alert className='border-emerald-200 bg-emerald-50/80 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100'>
+                <CheckCircle2 aria-hidden='true' />
+                <AlertTitle>合规接入建议</AlertTitle>
+                <AlertDescription>
+                  如业务侧需要留存会话内容，请在自己的系统中按业务合规要求处理。
+                  本平台侧只作为文本模型 API 网关转发与计费，不提供请求内容回溯。
+                </AlertDescription>
+              </Alert>
+            </DocsSection>
+
+            <DocsSection id='errors' title='错误与重试建议'>
+              <div className='bg-background overflow-hidden rounded-lg border'>
+                <div className='grid gap-0 divide-y md:grid-cols-2 md:divide-x md:divide-y-0'>
+                  <div className='p-4'>
+                    <div className='text-sm font-semibold'>鉴权或额度错误</div>
+                    <ul className='text-muted-foreground mt-2 list-disc space-y-1.5 pl-5 text-sm leading-6'>
+                      <li>
+                        <InlineCode>401</InlineCode>：检查 API Key
+                        是否完整，建议使用 <InlineCode>sk-</InlineCode>{' '}
+                        开头的令牌。
+                      </li>
+                      <li>
+                        <InlineCode>403</InlineCode>：当前 Key
+                        无模型权限或账号状态不可用。
+                      </li>
+                      <li>
+                        <InlineCode>429</InlineCode>：触发速率限制或余额不足，
+                        可降低并发或检查钱包余额。
+                      </li>
+                    </ul>
+                  </div>
+                  <div className='p-4'>
+                    <div className='text-sm font-semibold'>上游或网络错误</div>
+                    <ul className='text-muted-foreground mt-2 list-disc space-y-1.5 pl-5 text-sm leading-6'>
+                      <li>
+                        <InlineCode>5xx</InlineCode>
+                        ：按指数退避重试，避免固定频率快速重放。
+                      </li>
+                      <li>流式请求请监听连接关闭，并按业务幂等策略决定是否重试。</li>
+                      <li>
+                        排查时优先提供请求时间、模型名、状态码和日志 ID，
+                        不需要提供请求正文。
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </DocsSection>
 
             <DocsSection id='notes' title='接入注意事项'>

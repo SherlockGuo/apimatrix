@@ -46,6 +46,13 @@ type FilterOption = {
   icon?: ReactNode
 }
 
+const PUBLIC_TEXT_ENDPOINT_TYPES = new Set<string>([
+  ENDPOINT_TYPES.OPENAI,
+  ENDPOINT_TYPES.OPENAI_RESPONSE,
+  ENDPOINT_TYPES.ANTHROPIC,
+  ENDPOINT_TYPES.GEMINI,
+])
+
 type FilterSectionProps = {
   title: string
   value: string
@@ -232,7 +239,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
       count: props.models.length,
     },
     ...Object.entries(endpointTypeLabels)
-      .filter(([value]) => value !== ENDPOINT_TYPES.ALL)
+      .filter(([value]) => PUBLIC_TEXT_ENDPOINT_TYPES.has(value))
       .map(([value, label]) => ({
         value,
         label,
